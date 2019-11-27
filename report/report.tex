@@ -1,0 +1,180 @@
+%% 
+%% Copyright 2007, 2008, 2009 Elsevier Ltd
+%% 
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%% SP 2008/03/01
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn]{elsarticle}
+%% \documentclass[final,3p,times]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn]{elsarticle}
+%% \documentclass[final,5p,times]{elsarticle}
+%% \documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+\newif\ifDRAFT
+\DRAFTfalse
+%\DRAFTtrue
+
+\ifDRAFT
+\documentclass[review,number,sort&compress,12pt]{elsarticle}
+    %% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+%% \usepackage{lineno}
+    \usepackage{lineno}
+    \newcommand{\picwidth}{0.8\textwidth}
+\else 
+  \documentclass[final,5p,times]{elsarticle}
+    \newcommand{\picwidth}{0.48\textwidth}
+\fi
+
+% packages
+%\usepackage{fontspec}
+%\setmainfont{Gulliver}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{braket}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{patterns}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{diagbox} % generate diagonal divided cell in table
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\floatplacement{figure}{H}
+
+\usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage{algpseudocode}
+%\usepackage{mathalfa}
+%\usepackage{mathrsfs}
+\DeclareMathOperator*{\argmin}{argmin}
+%\DeclareMathAlphabet{\mathcal}{OT1}{pzc}{m}{bf}
+\usepackage[imagesright]{rotating}
+%\usepackage{subfigure}
+\captionsetup[subfigure]{labelformat=simple,labelsep=colon}
+\renewcommand{\thesubfigure}{fig\arabic{subfigure}}
+
+
+
+% new commands
+\newcommand{\EQ}[1]{Eq.~(\ref{#1})}                
+\newcommand{\EQUATION}[1]{Equation~(\ref{eq:#1})} 
+\newcommand{\TWOEQS}[2]{Eqs.~(\ref{eq:#1})~and~(\ref{eq:#2})}  
+\newcommand{\TWOEQUATIONS}[2]{Equations~(\ref{eq:#1})~and~(\ref{eq:#2})}  
+\newcommand{\EQS}[1]{Eqs.~(\ref{#1})}             %-- Eqs. (refeqs)
+\newcommand{\EQUATIONS}[1]{Equations~(\ref{#1})}  %-- Eqs. (refeqs)
+\newcommand{\FIG}[1]{Fig.~\ref{#1}}               %-- Fig. refig
+\newcommand{\FIGURE}[1]{Figure~\ref{#1}}          %-- Figure refig
+\newcommand{\TAB}[1]{Table~\ref{#1}}              %-- Table tablref
+\newcommand{\SEC}[1]{Section~\ref{#1}}               %-- Eq. (refeq)
+\newcommand{\REF}[1]{Ref.~\citen{#1}}               %-- Eq. (refeq)
+\newcommand{\BLUE}[1]{\textcolor{blue}{#1}}
+\renewcommand{\vec}[1]{\boldsymbol{#1}} %vector is bold italic
+\newcommand{\vd}{\bm{\cdot}} % slightly bold vector dot
+\newcommand{\grad}{\vec{\nabla}} % gradient
+\newcommand{\ud}{\mathop{}\!\mathrm{d}} % upright derivative symbol
+\graphicspath{{../data/rendered/}}
+
+
+\ifDRAFT
+\doublespacing
+\fi
+
+\journal{STAT 713}
+\usepackage{filecontents,catchfile}
+
+\begin{document}
+% \sloppy % prevent words spill into the margin
+\begin{frontmatter}
+
+\title{Dynamic Mode Decomposition as a Linear Model for Spatiotemporal Systems}
+
+\author{Jeremy A. Roberts\corref{cor}}
+\ead{jaroberts@k-state.edu}
+\address{Department of Statistics, Kansas State University, Manhattan, KS 66506, USA}
+\cortext[cor]{Corresponding author}
+
+% 100–300 word summary of your report
+\begin{abstract}
+
+\end{abstract}
+
+\begin{keyword}
+ spatio-temporal basis functions \sep rank reduction \sep dynamic mode decomposition.
+\end{keyword}
+\end{frontmatter}
+
+\ifDRAFT
+\linenumbers
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\label{sec:introduction}
+% 500--1000 words
+
+Many of the largest data sets in this era of ``big data'' are generated from measurements of processes that evolve in space and time.
+These measurements may be physical or simulated, but the often inseparable dependence of the latent process (i.e., the ``true'' but unknown process) on space and time makes the development of satisfactory statistical models a challenging task.
+Although a rich literature exists on spatio-temporal statistics (see, e.g., Refs. \cite{cressie2011sst} and \cite{wikle2019sts}), the present effort focused specifically on the generation of spatio-temporal basis functions for use in a standard, linear model.  
+Consider a set of measurements $\mathbf{Z} = [\mathbf{z}_1, \mathbf{z}_2, \ldots, \mathbf{z}_n]$
+\begin{equation}
+ a
+\end{equation}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methods}
+\label{sec:methods}
+% 500--1000 words
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+\label{sec:results}
+% 500--1000 words
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+\label{sec:discusion}
+% 500--1000 words
+% The discussion should place your results into the context of existing
+% work and explore what additional research still needs to be done.
+
+
+\section*{References}
+\bibliographystyle{elsarticle-num} 
+\bibliography{references}
+
+\end{document}

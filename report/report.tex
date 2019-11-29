@@ -144,13 +144,40 @@
 % 500--1000 words
 
 Many of the largest data sets in this era of ``big data'' are generated from measurements of processes that evolve in space and time.
-These measurements may be physical or simulated, but the often inseparable dependence of the latent process (i.e., the ``true'' but unknown process) on space and time makes the development of satisfactory statistical models a challenging task.
-Although a rich literature exists on spatio-temporal statistics (see, e.g., Refs. \cite{cressie2011sst} and \cite{wikle2019sts}), the present effort focused specifically on the generation of spatio-temporal basis functions for use in a standard, linear model.  
-Consider a set of measurements $\mathbf{Z} = [\mathbf{z}_1, \mathbf{z}_2, \ldots, \mathbf{z}_n]$
-\begin{equation}
- a
-\end{equation}
+These measurements may be physical or simulated, but the often inseparable dependence of the latent process (i.e., the ``true'' but unknown process) on space and time makes the development of satisfactory statistical models for the data a challenging task.
+A rich literature exists on spatio-temporal, statistical models (see, e.g., Refs. \cite{cressie2011sst} and \cite{wikle2019sts}).
+Such models can be categorized as descriptive or dynamic.  
+Descriptive models define a mean and covariance, often via kriging, and are consistent with the spirit of general linear models.  
+Dynamic models assume that evolution in space and time follow some explicity defined, usually Markovian, process and, hence, appear to live somewhat outside the domain of general linear models (though the processes assumed can be and often are linear).
 
+For both descriptive and dynamic models, the construction of suitable basis vectors in space, time, or both is often important for reducing the dimension of the problem.
+With descriptive models, use of a low-rank basis, as in fixed-rank kriging, leads to smaller, more practical covariance matrices.
+For dynamic models, the governing process can be projected onto a low-rank basis that captures the dominant characteristics of the system.
+Common basis functions including linear, wavelet, Gaussian, and sinusoidal shapes in both space and time, and these can be combined via Kronecker products to produce a spatio-temporal basis.
+Alternative basis vectors known as empirical orthogonal functions (EOFs) can be derived directly from the spatio-temporal observations through use of the singular-value decomposition of the space-averaged or time-averaged observations.
+Such inherently discrete vectors can be used as continuous functions with appropriate interpolation.
+
+The effort described here explored the use of dynamic-mode decomposition (DMD) \cite{schmid:hal-01053394} to produce spatially-discrete, temporally continuous basis functions for use in spatio-temporal, statistical models.
+The DMD algorithm was first reported as a technique by which to analyzie spatio-temporal structures in complex fluid flows \cite{schmid:hal-01053394, schmid2010dynamic}.
+Several extensions to DMD and its connection to the much older Koopman operator theory have been well described in a recent monograph \cite{kutzbook}.  
+Basically, given a nonlinear, dynamical system $d\mathbf{z}/dt = \mathbf{f(\mathbf{z})}$, the infinite dimensional but linear Koopman operator $\mathcal{K}$ satisfies the relationship $\mathcal{K}\mathbf{g}(\mathbf{z}) = \mathbf{g}(\mathbf{f}(\mathbf{z}))$ for a measurement function $\mathbf{g}$.
+If the eigenfunctions of $\mathcal{K}$ are known, then measurements $\mathbf{g}(\mathbf{z})$ made from the original, nonlinear system can instead be defined directly using an eigenfunction expansion with known initial conditions.
+In practice, neither $\mathcal{K}$ nor its eigenfunctions are generally accessible, and finite-dimensional approximations are sought; the DMD algorithm provides this approximation, and the resulting eigenmodes it produces form the basis vectors used in the present work.
+
+To limit the scope of the study, the generated basis vectors were applied only within a standard, linear model (i.e., fixed effects with uncorrelated, normally-distributed errors). Moreover, the development is limited to those problems in which measurements $Z_{ij}$ are made on a fixed, regular, spatio-temporal grid, i.e., for spatial points $\mathbf{r}_i, i = 1, 2, \ldots m$ and times $t_j, j = 1, 2, \ldots n$. 
+Here, each spatial coordinate $\mathbf{r}_i$ is treated as a vector to account for more than one dimension, e.g., $\mathbf{r}_i = [x_i, y_i, z_i]$ in three-dimensional, Cartesian coordinates.
+In other words, the entire set of measurements can be viewed as a matrix $\mathbf{Z} \in \mathbb{R}^{m\times n}$.  
+An alternative representation is the reshaped, $mn \times 1$ vector $\mathbf{z} = [Z_{11}, Z_{21}, \ldots Z_{m1}, Z_{12}, \ldots, Z_{mn}]$.
+With this representation, let
+\begin{equation}
+ \mathbf{z} = \boldsymbol{\Psi}\boldsymbol{\beta} + \boldsymbol{\varepsilon} \, ,
+\end{equation}
+where $\boldsymbol{\varepsilon} \sim N(0, \mathbf{I}\sigma^2_{\varepsilon})$ and the columns $\boldsymbol{\psi}_k$ of the design matrix $\boldsymbol{\Psi}$ are basis vectors.
+
+Although the DMD algorithm provides a deterministic way by which to define $\mathbf{\psi}$, there are many ways to choose how many modes to use, which modes to use, and how to combine the selected modes.
+A key issue addressed in the study is to explore statistical metrics for choosing the number of basis functions to use and how to combine them in an optimal way.
+To aid in this exploration, sea-surface temperature (SST) anomaly data as provided by Ref.~\cite{wikle2019sts} were adopted for all analyses.
+Because only one set of data was explored, this study is naturally preliminary in nature, but the results suggest that DMD may be a very powerful way to incorporate the leading dynamics of a system into a basis used for fixed effects (as studied here) and, possibly, random effects in general linear models.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -191,28 +191,45 @@ Because only one set of data was explored, this study is naturally preliminary i
 % 500--1000 words
 
 Central to the analysis presented here is the DMD algorithm.
-Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms.
+Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms by adapting the presentation of Ref.~\cite{kutzbook}.
 Consider again a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where $\mathbf{z} \in \mathbb{R}^n$ is the $n$-dimensional state vector at time $t$.
 Suppose there exists some linear operator $\mathcal{A}$ such that
 \begin{equation}
  \frac{d \mathbf{z}}{dt} = \mathcal{A} \mathbf{z} \, .
+ \label{eq:approxdynamicalsystem}
 \end{equation}
 One might note that this $\mathcal{A}$ represents the Koopman operator for the measurement function $\mathbf{g}(\mathbf{z}) = \mathbf{z}$ and is likely not known explicitly.
-However, let the system be observed, leading to a sequence of observations of the state vector in time, i.e., [$\mathbf{Z}_{:, 1}, \mathbf{Z}_{:. 2}, \ldots \mathbf{Z}_{:, n}$], where the $m$-vector $\mathbf{Z}_{:, j}$ is the $j$th column of matrix $\mathbf{Z}$. 
+However, let the system be observed, leading to a sequence of observations of the state vector in time, i.e., $\mathbf{Z} = [\mathbf{z}_{1}, \mathbf{z}_{2}, \ldots \mathbf{z}_{n}$], where the $m$-vector $\mathbf{z}_{j}$ is the $j$th column of $\mathbf{Z}$. 
 For simplicity, assume these observations are taken at equally-spaced times $t_0, t_1, \ldots t_n$ with $t_{i+1} = t_i + \Delta t$.  
-Now, let there be some, possibly approximate, linear mapping $\mathbf{Z}_{:,j+1} \approx \mathbf{A}\mathbf{Z}_{:,j}$, or \begin{equation}
+Now, let there be some, possibly approximate, linear mapping $\mathbf{z}_{j+1} \approx \mathbf{A}\mathbf{z}_{j}$, or \begin{equation}
    \mathbf{Z}_+ \approx \mathbf{A}\mathbf{Z}_- \, ,
+   \label{eq:linearmapping}
 \end{equation}
 where
 \begin{equation}
-  \mathbf{Z}_+ =  [\mathbf{Z}_{:,2},\mathbf{Z}_{:,3}, \ldots,\mathbf{Z}_{:,n}] \, ,
+  \mathbf{Z}_+ =  [\mathbf{z}_{2},\mathbf{z}_{3}, \ldots,\mathbf{z}_{n}] \, ,
 \end{equation}
 and
 \begin{equation}
- \mathbf{Z}_- =  [ \mathbf{Z}_{:,1},\mathbf{Z}_{:,2},\ldots, \mathbf{Z}_{:,n-1}] \,  .                                                                                                           
+ \mathbf{Z}_- =  [ \mathbf{z}_{1},\mathbf{z}_{2},\ldots, \mathbf{z}_{n-1}] \,  .                                                                                                           
 \end{equation}
+Since the solution to Eq.~(\ref{eq:approxdynamicalsystem}) is $\mathbf{z}(t) = e^{\mathcal{A}t}\mathbf{z}(0)$, $\mathbf{A}$ is the discrete-time approximation to $e^{\mathcal{A}\Delta}$.
+In addition, the  eigenvalues of $\mathbf{A}$ are related to the continuous-time eigenvalues $\omega_i$ of $\mathcal{A}$ by 
+\begin{equation}
+ \omega_i = \frac{\ln{(\lambda_i)}}{\Delta} \, .
+\end{equation}
+Corresponding to $\lambda_i$ is the eigenvector $\boldsymbol{\varphi}_i$ of $\mathbf{A}$, and, hence,
+\begin{equation}
+ \mathbf{z}(t) \approx \sum^{n-1}_{i=1} \boldsymbol{\varphi}_i e^{\omega_i t} b_i = \boldsymbol{\Phi}e^{\boldsymbol{\Omega}t}\mathbf{b} \, . 
+\end{equation}
+Although is no unique way to define the weights $\mathbf{b}$, one can satisfy $\mathbf{z}_1 = \boldsymbol{\Phi}\mathbf{b}$  in a least-squares sense by defining
+\begin{equation}
+ \mathbf{b} = \boldsymbol{\Phi}^{\dagger} \mathbf{z}_1 \, ,
+\end{equation}
+where $\dagger$ indicates the pseudoinverse. 
 
-The best-fit operator (in the Frobenius-norm sense) is $\mathbf{A}\approx \mathbf{Z}_+ \mathbf{Z}^{\dagger}_-$, where $\dagger$ indicates the pseudoinverse.  
+In general, there is no $\mathbf{A}$ that satisfies Eq.~(\ref{eq:linearmapping}) exactly.
+However, the best-fit operator (in the Frobenius-norm sense) is $\mathbf{A} = \mathbf{Z}_+ \mathbf{Z}^{\dagger}_-$.
 In practice, the (thin) singular value decomposition
 \begin{equation}
  \mathbf{Z}_-=\mathbf{U\Sigma V}^*  \, ,
@@ -226,25 +243,27 @@ Then the best-fit operator is
 \begin{equation}
  \mathbf{A} = \mathbf{Z}_+ \mathbf{V} \boldsymbol{\Sigma}^{-1}\mathbf{U}^* \, .
 \end{equation}
-However, because $\mathbf{A}$ can be intractably large, the low-rank approximation
+The columns of $\mathbf{U}$ are readily interpreted as the eigenvectors of the matrix $\mathbf{Z}_{-} \mathbf{Z}_{-}^* \in \mathbb{R}^{m\times m}$, which is strongly related to the spatial covariance matrix corresponding to the first $n-1$ measurements.
+Consequently, the columns of  $\mathbf{U}$ represent the principal directions that account for time-averaged, spatial variation (without detrending and scaling) and, hence, are strongly related to EOFs \cite{wikle2019sts}.
+
+
+Because $\mathbf{A}$ can be intractably large, the low-rank approximation
 \begin{equation}
  \tilde{\mathbf{A}} = \mathbf{U}^*_r \mathbf{A} \mathbf{U}_r = \mathbf{U}^*_r \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1} \, ,
 \end{equation}
 is formed, where $\boldsymbol{\Sigma} \in \mathbb{C}^{r\times r}$ is a diagonal matrix containing the largest $r < n$ singular values, and  $\mathbf{U}_r, \mathbf{V}_r \in \mathbb{C}^{n\times r} $ contain the corresponding columns of $\mathbf{U}$ and $\mathbf{V}$.  
-
-As defined, the columns of $\mathbf{U}$ are readily interpreted as the eigenvectors of the matrix $\mathbf{Z}_{-} \mathbf{Z}_{-}^* \in \mathbb{R}^{m\times m}$, which is strongly related to the spatial covariance matrix corresponding to the first $n-1$ measurements.
-Consequently, the columns of  $\mathbf{U}$ represent the principal directions that account for time-averaged, spatial variation (without detrending and scaling) and, hence, are strongly related to empirical orthogonal functions.
-
-
-
-
-
-is used to define the reduced-rank 
+Finally, with the eigendecomposition $\tilde{\mathbf{A}}\mathbf{W} = \mathbf{W}\boldsymbol{\Lambda}$, the diagonal elements $\lambda_i$ of $\boldsymbol{\Lambda}$ are the leading $r$ eigenvalues of $\mathbf{A}$ with the corresponding eigenvectors (often called DMD modes)
 \begin{equation}
-\tilde{\mathbf{A}} = \mathbf{U}^* \mathbf{Z}_-\mathbf{V}\mathbf{\Sigma}^{-1} \, ,
+ \boldsymbol{\Phi} = \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1}\mathbf{W} \, .
 \end{equation}
-where $*$ indicates the complex transpose.  Finally, the eigendecomposition $\tilde{\mathbf{A}}\mathbf{W} = \mathbf{W}\boldsymbol{\Lambda}$ leads to $\boldsymbol{\phi} = \mathbf{X}_+ \mathbf{V}\boldsymbol{\Sigma}^{-1}\mathbf{W}$, which are (approximate) eigenvectors of $\mathbf{A}$ and the explicit-in-time representation $\mathbf{x}(t) = \sum_{k=1} \phi_k e^{\omega_k t}  \beta_k$, where $\omega_k = \ln{\lambda_k}/\Delta t$ and $\lambda_k$ is the $k$th diagonal element of $\boldsymbol{\Lambda}$.
 
+With each eigenvector $\boldsymbol{\phi}_k$ and eigenvalue $\lambda_k$ of $\mathbf{A}$, one can construct the spatio-temporal basis vector
+\begin{equation}
+  \boldsymbol{\psi}_k = 
+    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots n \, \text{for} \, j = 1\ldots m]' \, .
+\end{equation}
+In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
+Moreover, the basis vectors can be complex valued, indicating oscillatory dynamics in the system, and leading to potential numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}

@@ -169,13 +169,13 @@ the infinite dimensional but linear Koopman operator $\mathcal{K}$ satisfies the
 If the eigenfunctions of $\mathcal{K}$ are known, then measurements $\mathbf{g}(\mathbf{z})$ made from the original, nonlinear system can instead be defined directly using an eigenfunction expansion and known initial conditions.
 In practice, neither $\mathcal{K}$ nor its eigenfunctions are generally accessible, and finite-dimensional approximations are sought; the DMD algorithm provides this approximation, and the resulting eigenmodes it produces form the basis vectors used in the present work.
 
-To limit the scope of the study, the generated basis vectors were applied only within a standard, linear model (i.e., fixed effects with uncorrelated, normally-distributed errors). Moreover, the development is limited to those problems in which measurements $Z_{ij}$ are made on a fixed, regular, spatio-temporal grid, i.e., for spatial points $\mathbf{r}_i, i = 1, 2, \ldots m$ and times $t_j, j = 1, 2, \ldots n$. 
-Here, each spatial coordinate $\mathbf{r}_i$ is treated as a vector to account for more than one dimension, e.g., $\mathbf{r}_i = [x_i, y_i, z_i]$ in three-dimensional, Cartesian coordinates.
-In other words, the entire set of measurements can be viewed as a matrix $\mathbf{Z} \in \mathbb{R}^{m\times n}$.  
-An alternative representation is the reshaped, $mn \times 1$ vector $\mathbf{z} = [Z_{11}, Z_{21}, \ldots Z_{m1}, Z_{12}, \ldots, Z_{mn}]$.
+To limit the scope of the study, the generated basis vectors were applied only within a standard, linear model (i.e., fixed effects with uncorrelated, normally-distributed errors). Moreover, the development is limited to those problems in which measurements $z_{ij}$ are made on a fixed, regular, spatio-temporal grid, i.e., for spatial points $\mathbf{r}_i, i = 1, 2, \ldots m$ and times $t_j, j = 1, 2, \ldots n$. 
+Here, each spatial coordinate $\mathbf{r}_i$ is treated as a vector to account for more than one dimension, e.g., $\mathbf{r}_i = [x_i, y_i]$ in two-dimensional, Cartesian coordinates.
+In other words, the entire set of measurements can be viewed as a matrix $\mathbf{Z} \in \mathbb{R}^{m\times n}$ with elements $z_{ij}$. 
+An alternative representation is the reshaped, $mn \times 1$ vector $\boldsymbol{\zeta} = [z_{11}, z_{21}, \ldots z_{m1}, z_{12}, \ldots, z_{mn}]$.
 With this representation, let
 \begin{equation}
- \mathbf{z} = \boldsymbol{\Psi}\boldsymbol{\beta} + \boldsymbol{\varepsilon} \, ,
+ \boldsymbol{\zeta} = \boldsymbol{\Psi}\boldsymbol{\beta} + \boldsymbol{\varepsilon} \, ,
 \end{equation}
 where $\boldsymbol{\varepsilon} \sim N(0, \mathbf{I}\sigma^2_{\varepsilon})$ and the columns $\boldsymbol{\psi}_k$ of the design matrix $\boldsymbol{\Psi}$ are basis vectors.
 
@@ -192,8 +192,13 @@ Because only one set of data was explored, this study is naturally preliminary i
 
 Central to the analysis presented here is the DMD algorithm.
 Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms.
-To motivate DMD, consider a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where 
-Let such a system be observed, leading to a sequence of observations of some discrete field in time, i.e., [$\mathbf{Z}_{:, 1}, \mathbf{Z}_{:. 2}, \ldots \mathbf{Z}_{:, n}$], where the $m$-vector $\mathbf{Z}_{:, j}$ is the $j$th column of matrix $\mathbf{Z}$. 
+Consider again a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where $\mathbf{z} \in \mathbb{R}^n$ is the $n$-dimensional state vector at time $t$.
+Suppose there exists some linear operator $\mathcal{A}$ such that
+\begin{equation}
+ \frac{d \mathbf{z}}{dt} = \mathcal{A} \mathbf{z} \, .
+\end{equation}
+One might note that this $\mathcal{A}$ represents the Koopman operator for the measurement function $\mathbf{g}(\mathbf{z}) = \mathbf{z}$ and is likely not known explicitly.
+However, let the system be observed, leading to a sequence of observations of the state vector in time, i.e., [$\mathbf{Z}_{:, 1}, \mathbf{Z}_{:. 2}, \ldots \mathbf{Z}_{:, n}$], where the $m$-vector $\mathbf{Z}_{:, j}$ is the $j$th column of matrix $\mathbf{Z}$. 
 For simplicity, assume these observations are taken at equally-spaced times $t_0, t_1, \ldots t_n$ with $t_{i+1} = t_i + \Delta t$.  
 Now, let there be some, possibly approximate, linear mapping $\mathbf{Z}_{:,j+1} \approx \mathbf{A}\mathbf{Z}_{:,j}$, or \begin{equation}
    \mathbf{Z}_+ \approx \mathbf{A}\mathbf{Z}_- \, ,
@@ -219,13 +224,19 @@ is used to define
 where $\mathbf{U} \in \mathbb{C}^{m\times n}$, $\mathbf{V} \in \mathbb{C}^{n\times n}$, and $\boldsymbol{\Sigma} \in \mathbb{C}^{n\times n}$.  
 Then the best-fit operator is
 \begin{equation}
- \mathbf{A} = \mathbf{Z}_+ \mathbf{V} \boldsymbol{\Sigma}^{-1}\mathbf{U}^* \, ,
+ \mathbf{A} = \mathbf{Z}_+ \mathbf{V} \boldsymbol{\Sigma}^{-1}\mathbf{U}^* \, .
 \end{equation}
-but because this matrix can be intractably large, the low-rank approximation
+However, because $\mathbf{A}$ can be intractably large, the low-rank approximation
 \begin{equation}
- \tilde{\mathbf{A}} = \mathbf{U}^*_r \mathbf{A} \mathbf{U})_r 
+ \tilde{\mathbf{A}} = \mathbf{U}^*_r \mathbf{A} \mathbf{U}_r = \mathbf{U}^*_r \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1} \, ,
 \end{equation}
-is used, where $\mathbf{U}_r$ contains the first $r < n$ columns of the left singular matrix $\mathbf{U}$, usually corresponding to the largest $r$ singular values.  
+is formed, where $\boldsymbol{\Sigma} \in \mathbb{C}^{r\times r}$ is a diagonal matrix containing the largest $r < n$ singular values, and  $\mathbf{U}_r, \mathbf{V}_r \in \mathbb{C}^{n\times r} $ contain the corresponding columns of $\mathbf{U}$ and $\mathbf{V}$.  
+
+As defined, the columns of $\mathbf{U}$ are readily interpreted as the eigenvectors of the matrix $\mathbf{Z}_{-} \mathbf{Z}_{-}^* \in \mathbb{R}^{m\times m}$, which is strongly related to the spatial covariance matrix corresponding to the first $n-1$ measurements.
+Consequently, the columns of  $\mathbf{U}$ represent the principal directions that account for time-averaged, spatial variation (without detrending and scaling) and, hence, are strongly related to empirical orthogonal functions.
+
+
+
 
 
 is used to define the reduced-rank 

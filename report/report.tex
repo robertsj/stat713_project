@@ -160,8 +160,13 @@ Such inherently discrete vectors can be used as continuous functions with approp
 The effort described here explored the use of dynamic-mode decomposition (DMD) \cite{schmid:hal-01053394} to produce spatially-discrete, temporally continuous basis functions for use in spatio-temporal, statistical models.
 The DMD algorithm was first reported as a technique by which to analyzie spatio-temporal structures in complex fluid flows \cite{schmid:hal-01053394, schmid2010dynamic}.
 Several extensions to DMD and its connection to the much older Koopman operator theory have been well described in a recent monograph \cite{kutzbook}.  
-Basically, given a nonlinear, dynamical system $d\mathbf{z}/dt = \mathbf{f(\mathbf{z})}$, the infinite dimensional but linear Koopman operator $\mathcal{K}$ satisfies the relationship $\mathcal{K}\mathbf{g}(\mathbf{z}) = \mathbf{g}(\mathbf{f}(\mathbf{z}))$ for a measurement function $\mathbf{g}$.
-If the eigenfunctions of $\mathcal{K}$ are known, then measurements $\mathbf{g}(\mathbf{z})$ made from the original, nonlinear system can instead be defined directly using an eigenfunction expansion with known initial conditions.
+Basically, given a nonlinear, dynamical system
+\begin{equation}
+  \frac{d\mathbf{z}}{dt} = \mathbf{f}(\mathbf{z}) \, ,
+  \label{eq:dynamicalsystem}
+\end{equation}
+the infinite dimensional but linear Koopman operator $\mathcal{K}$ satisfies the relationship $\mathcal{K}\mathbf{g}(\mathbf{z}) = \mathbf{g}(\mathbf{f}(\mathbf{z}))$ for some measurement function $\mathbf{g}$.
+If the eigenfunctions of $\mathcal{K}$ are known, then measurements $\mathbf{g}(\mathbf{z})$ made from the original, nonlinear system can instead be defined directly using an eigenfunction expansion and known initial conditions.
 In practice, neither $\mathcal{K}$ nor its eigenfunctions are generally accessible, and finite-dimensional approximations are sought; the DMD algorithm provides this approximation, and the resulting eigenmodes it produces form the basis vectors used in the present work.
 
 To limit the scope of the study, the generated basis vectors were applied only within a standard, linear model (i.e., fixed effects with uncorrelated, normally-distributed errors). Moreover, the development is limited to those problems in which measurements $Z_{ij}$ are made on a fixed, regular, spatio-temporal grid, i.e., for spatial points $\mathbf{r}_i, i = 1, 2, \ldots m$ and times $t_j, j = 1, 2, \ldots n$. 
@@ -184,6 +189,50 @@ Because only one set of data was explored, this study is naturally preliminary i
 \section{Methods}
 \label{sec:methods}
 % 500--1000 words
+
+Central to the analysis presented here is the DMD algorithm.
+Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms.
+To motivate DMD, consider a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where 
+Let such a system be observed, leading to a sequence of observations of some discrete field in time, i.e., [$\mathbf{Z}_{:, 1}, \mathbf{Z}_{:. 2}, \ldots \mathbf{Z}_{:, n}$], where the $m$-vector $\mathbf{Z}_{:, j}$ is the $j$th column of matrix $\mathbf{Z}$. 
+For simplicity, assume these observations are taken at equally-spaced times $t_0, t_1, \ldots t_n$ with $t_{i+1} = t_i + \Delta t$.  
+Now, let there be some, possibly approximate, linear mapping $\mathbf{Z}_{:,j+1} \approx \mathbf{A}\mathbf{Z}_{:,j}$, or \begin{equation}
+   \mathbf{Z}_+ \approx \mathbf{A}\mathbf{Z}_- \, ,
+\end{equation}
+where
+\begin{equation}
+  \mathbf{Z}_+ =  [\mathbf{Z}_{:,2},\mathbf{Z}_{:,3}, \ldots,\mathbf{Z}_{:,n}] \, ,
+\end{equation}
+and
+\begin{equation}
+ \mathbf{Z}_- =  [ \mathbf{Z}_{:,1},\mathbf{Z}_{:,2},\ldots, \mathbf{Z}_{:,n-1}] \,  .                                                                                                           
+\end{equation}
+
+The best-fit operator (in the Frobenius-norm sense) is $\mathbf{A}\approx \mathbf{Z}_+ \mathbf{Z}^{\dagger}_-$, where $\dagger$ indicates the pseudoinverse.  
+In practice, the (thin) singular value decomposition
+\begin{equation}
+ \mathbf{Z}_-=\mathbf{U\Sigma V}^*  \, ,
+\end{equation}
+is used to define 
+\begin{equation}
+ \mathbf{Z}^{\dagger}_- = \mathbf{V}\boldsymbol{\Sigma}^{-1}\mathbf{U}^* \, ,
+\end{equation}
+where $\mathbf{U} \in \mathbb{C}^{m\times n}$, $\mathbf{V} \in \mathbb{C}^{n\times n}$, and $\boldsymbol{\Sigma} \in \mathbb{C}^{n\times n}$.  
+Then the best-fit operator is
+\begin{equation}
+ \mathbf{A} = \mathbf{Z}_+ \mathbf{V} \boldsymbol{\Sigma}^{-1}\mathbf{U}^* \, ,
+\end{equation}
+but because this matrix can be intractably large, the low-rank approximation
+\begin{equation}
+ \tilde{\mathbf{A}} = \mathbf{U}^*_r \mathbf{A} \mathbf{U})_r 
+\end{equation}
+is used, where $\mathbf{U}_r$ contains the first $r < n$ columns of the left singular matrix $\mathbf{U}$, usually corresponding to the largest $r$ singular values.  
+
+
+is used to define the reduced-rank 
+\begin{equation}
+\tilde{\mathbf{A}} = \mathbf{U}^* \mathbf{Z}_-\mathbf{V}\mathbf{\Sigma}^{-1} \, ,
+\end{equation}
+where $*$ indicates the complex transpose.  Finally, the eigendecomposition $\tilde{\mathbf{A}}\mathbf{W} = \mathbf{W}\boldsymbol{\Lambda}$ leads to $\boldsymbol{\phi} = \mathbf{X}_+ \mathbf{V}\boldsymbol{\Sigma}^{-1}\mathbf{W}$, which are (approximate) eigenvectors of $\mathbf{A}$ and the explicit-in-time representation $\mathbf{x}(t) = \sum_{k=1} \phi_k e^{\omega_k t}  \beta_k$, where $\omega_k = \ln{\lambda_k}/\Delta t$ and $\lambda_k$ is the $k$th diagonal element of $\boldsymbol{\Lambda}$.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

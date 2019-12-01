@@ -117,7 +117,7 @@
 % \sloppy % prevent words spill into the margin
 \begin{frontmatter}
 
-\title{Dynamic Mode Decomposition as a Linear Model for Spatiotemporal Systems}
+\title{Dynamic Mode Decomposition as a Linear Model for Spatio-temporal Systems}
 
 \author{Jeremy A. Roberts\corref{cor}}
 \ead{jaroberts@k-state.edu}
@@ -176,6 +176,7 @@ An alternative representation is the reshaped, $mn \times 1$ vector $\boldsymbol
 With this representation, let
 \begin{equation}
  \boldsymbol{\zeta} = \boldsymbol{\Psi}\boldsymbol{\beta} + \boldsymbol{\varepsilon} \, ,
+ \label{eq:linmodel}
 \end{equation}
 where $\boldsymbol{\varepsilon} \sim N(0, \mathbf{I}\sigma^2_{\varepsilon})$ and the columns $\boldsymbol{\psi}_k$ of the design matrix $\boldsymbol{\Psi}$ are basis vectors.
 
@@ -189,6 +190,8 @@ Because only one set of data was explored, this study is naturally preliminary i
 \section{Methods}
 \label{sec:methods}
 % 500--1000 words
+
+\subsection{Dynamic Mode Decomposition} 
 
 Central to the analysis presented here is the DMD algorithm.
 Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms by adapting the presentation of Ref.~\cite{kutzbook}.
@@ -221,10 +224,12 @@ In addition, the  eigenvalues of $\mathbf{A}$ are related to the continuous-time
 Corresponding to $\lambda_i$ is the eigenvector $\boldsymbol{\varphi}_i$ of $\mathbf{A}$, and, hence,
 \begin{equation}
  \mathbf{z}(t) \approx \sum^{n-1}_{i=1} \boldsymbol{\varphi}_i e^{\omega_i t} b_i = \boldsymbol{\Phi}e^{\boldsymbol{\Omega}t}\mathbf{b} \, . 
+ \label{eq:dmdreconstruction}
 \end{equation}
 Although is no unique way to define the weights $\mathbf{b}$, one can satisfy $\mathbf{z}_1 = \boldsymbol{\Phi}\mathbf{b}$  in a least-squares sense by defining
 \begin{equation}
  \mathbf{b} = \boldsymbol{\Phi}^{\dagger} \mathbf{z}_1 \, ,
+ \label{eq:amplitudes}
 \end{equation}
 where $\dagger$ indicates the pseudoinverse. 
 
@@ -256,19 +261,32 @@ Finally, with the eigendecomposition $\tilde{\mathbf{A}}\mathbf{W} = \mathbf{W}\
 \begin{equation}
  \boldsymbol{\Phi} = \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1}\mathbf{W} \, .
 \end{equation}
+The reduced rank $r$ selected impacts the overall accuracy of the DMD reconstruction defined by Eq.~(\ref{eq:dmdreconstruction}). 
+One way to select $r$ is to use the optimal hard threshold for singular values \cite{gavish2014optimal}, which provides the best denoising of a set of measurements subject to known, independently- and normally-distributed noise---precisely as assumed in Eq.~(\ref{eq:linmodel}).  
 
 With each eigenvector $\boldsymbol{\phi}_k$ and eigenvalue $\lambda_k$ of $\mathbf{A}$, one can construct the spatio-temporal basis vector
 \begin{equation}
   \boldsymbol{\psi}_k = 
-    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots n \, \text{for} \, j = 1\ldots m]' \, .
+    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots n \, \text{for} \, j = 1\ldots m]' \, ,
 \end{equation}
+which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined by Eq.~(\ref{eq:linmodel}).
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
-Moreover, the basis vectors can be complex valued, indicating oscillatory dynamics in the system, and leading to potential numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
+Moreover, the basis vectors can be complex valued, which indicates oscillatory dynamics in the system and can lead to  numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
+In practice, however, it appears that one may use the real part of a complex prediction to good effect.
+
+Given the basis $\boldsymbol{\Psi}$, the maximum-likelihood estimates of the parameters $\boldsymbol{\beta}$ and $\sigma^2_{\varepsilon}$ of Eq.~(\ref{eq:linmodel}) can be made.
+These estimates likely provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).
+A separate issue is decide which columns of the basis $\boldsymbol{\Psi}$ to use in the regression analysis.
+Because these columns are not orthogonal (i.e., they are collinear), inclusion of one additional basis vector generally changes all existing coefficients
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 \label{sec:results}
 % 500--1000 words
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

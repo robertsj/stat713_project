@@ -226,7 +226,7 @@ Corresponding to $\lambda_i$ is the eigenvector $\boldsymbol{\varphi}_i$ of $\ma
  \mathbf{z}(t) \approx \sum^{n-1}_{i=1} \boldsymbol{\varphi}_i e^{\omega_i t} b_i = \boldsymbol{\Phi}e^{\boldsymbol{\Omega}t}\mathbf{b} \, . 
  \label{eq:dmdreconstruction}
 \end{equation}
-Although is no unique way to define the weights $\mathbf{b}$, one can satisfy $\mathbf{z}_1 = \boldsymbol{\Phi}\mathbf{b}$  in a least-squares sense by defining
+Although there is no unique way to define the weights $\mathbf{b}$, one can satisfy $\mathbf{z}_1 = \boldsymbol{\Phi}\mathbf{b}$  in a least-squares sense by defining
 \begin{equation}
  \mathbf{b} = \boldsymbol{\Phi}^{\dagger} \mathbf{z}_1 \, ,
  \label{eq:amplitudes}
@@ -255,8 +255,9 @@ Consequently, the columns of  $\mathbf{U}$ represent the principal directions th
 Because $\mathbf{A}$ can be intractably large, the low-rank approximation
 \begin{equation}
  \tilde{\mathbf{A}} = \mathbf{U}^*_r \mathbf{A} \mathbf{U}_r = \mathbf{U}^*_r \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1} \, ,
+ \label{eq:lowrank}
 \end{equation}
-is formed, where $\boldsymbol{\Sigma} \in \mathbb{C}^{r\times r}$ is a diagonal matrix containing the largest $r < n$ singular values, and  $\mathbf{U}_r, \mathbf{V}_r \in \mathbb{C}^{n\times r} $ contain the corresponding columns of $\mathbf{U}$ and $\mathbf{V}$.  
+is formed, where $\boldsymbol{\Sigma}_r \in \mathbb{C}^{r\times r}$ is a diagonal matrix containing the largest $r < n$ singular values, and  $\mathbf{U}_r, \mathbf{V}_r \in \mathbb{C}^{n\times r} $ contain the corresponding columns of $\mathbf{U}$ and $\mathbf{V}$.  
 Finally, with the eigendecomposition $\tilde{\mathbf{A}}\mathbf{W} = \mathbf{W}\boldsymbol{\Lambda}$, the diagonal elements $\lambda_i$ of $\boldsymbol{\Lambda}$ are the leading $r$ eigenvalues of $\mathbf{A}$ with the corresponding eigenvectors (often called DMD modes)
 \begin{equation}
  \boldsymbol{\Phi} = \mathbf{Z}_+ \mathbf{V}_r\boldsymbol{\Sigma}_r^{-1}\mathbf{W} \, .
@@ -271,20 +272,24 @@ With each eigenvector $\boldsymbol{\phi}_k$ and eigenvalue $\lambda_k$ of $\math
 \end{equation}
 which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined by Eq.~(\ref{eq:linmodel}).
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
-Moreover, the basis vectors can be complex valued, which indicates oscillatory dynamics in the system and can lead to  numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
-In practice, however, it appears that one may use the real part of a complex prediction to good effect.
+Moreover, the basis vectors can be complex valued, which indicates oscillatory dynamics in the system and, in principle, may lead to  numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
+However, complex modes always appear in conjugate pairs. 
+Hence, if both modes are included in the basis, the opposing, imaginary components will cancel upon projection of a real-valued quantity onto the basis.
+In other words, the real part of the conjugate pair may be kept, reducing the apparent basis rank by one (but, in fact, removing a superfluous degree of freedom).
 
 Given the basis $\boldsymbol{\Psi}$, the maximum-likelihood estimates of the parameters $\boldsymbol{\beta}$ and $\sigma^2_{\varepsilon}$ of Eq.~(\ref{eq:linmodel}) can be made.
-These estimates likely provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).
+These estimates provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).  
 A separate issue is decide which columns of the basis $\boldsymbol{\Psi}$ to use in the regression analysis.
-Because these columns are not orthogonal (i.e., they are collinear), inclusion of one additional basis vector generally changes all existing coefficients
-
+Because these columns are not orthogonal (i.e., they are collinear), inclusion of one additional basis vector generally changes the impact of each other basis vector.
+Past work applied an approximate, sparsity-promoting technique equivalent to lasso-regression for selecting a subset of modes to include followed by a standard, least-squares fit of the data to those modes \cite{jovanovic}.
+For the present work, the number of modes computed (i.e., the rank $r$ in Eq.~\ref{eq:lowrank}) was fixed, and all modes computed were included in the basis.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
 \label{sec:results}
 % 500--1000 words
+
 
 
 

@@ -13,6 +13,7 @@ from pydmd import DMD as DMD
 # Load the data saved from the STRbook package.  These are
 # SST data through 1997 to be consistent with the book's example.
 df = pandas.read_csv('NOAA_df.csv')
+df2 = pandas.read_csv('NOAA_df2.csv')
 
 #%%
 stations = list(set(df['id']))
@@ -22,9 +23,6 @@ for station in stations:
     print(v)
     if v == 31:
         keep.append(station)
-       # assert np.array(df[df.id==station]['julian'])[0] == 726834
-        #assert np.array(df[df.id==station]['julian'])[-1] == 728294
-
 
 df = df[df.id.isin(keep)]
 df.to_csv('NOAA_df_small.csv', index=False, quotechar='"')
@@ -49,7 +47,7 @@ lon = df.lon[::num_times]
 # onto the reduced space (but we don't need these).  By setting exact to True,
 # we get DMD modes that are exact eigenvectors of A as presented in the
 # report.
-dmd = DMD(svd_rank=5, opt=True, exact=True)#, max_level=4)
+dmd = DMD(svd_rank=5, opt=False, exact=True)#, max_level=4)
 
 times = list(range(0, len(snapshots[0, :])))
 skip = 1
@@ -62,10 +60,40 @@ dmd.dmd_time = {'t0': 0, 'tend': times[-1]/skip, 'dt': 1/skip}
 
 #%% 
 
-def generate_dmd_basis
-    omega = np.log(self.eigs)/dmd.original_time['dt']
-    vander = np.exp(np.multiply(*np.meshgrid(omega, self.dmd_timesteps)))
-        return (vander * self._b).T
+def generate_dmd_basis(dmd, times=None):
+    """ 
+    """
+    
+    omega = np.log(dmd.eigs)/dmd.original_time['dt']
+    
+    if times is None:
+        times = dmd.dmd_timesteps
+    
+    num_space = len(dmd.modes[:, 0])
+    num_times = len(times)
+    rank = len(dmd.eigs)
+    
+    basis = np.zeros((num_space*num_times, rank), dtype='complex')
+    
+    for r in range(rank):
+        temporal = np.exp(omega[r] * times) #* dmd._b[r]
+        spatial = dmd.modes[:, r]
+        basis[:, r] = np.kron(spatial, temporal)#, spatial)
+        basis[:, r] = basis[:, r] / np.linalg.norm(basis[:, r])
+    return basis
+
+
+#%%
+
+Z = np.array(df['z'], dtype='float')
+
+B = generate_dmd_basis(dmd)
+Q = B@np.linalg.lstsq(B, Z)[0]
+Q = Q.real
+
+R = dmd.reconstructed_data.real.reshape((4092,))
+#Q = Q.reshape((num_locs, num_times))
+
 
 #%%
 k = 2

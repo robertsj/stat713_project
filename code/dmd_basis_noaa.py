@@ -39,6 +39,16 @@ num_times = len(snapshots[0, :])
 lat = df.lat[::num_times]
 lon = df.lon[::num_times]
 
+Zm = snapshots[:,:-1]
+Zp = snapshots[:,1:]
+
+rank = 5
+U, S, V = np.linalg.svd(Zm)
+U = U[:, :rank]
+S = S[:rank]
+V = V[:, :rank]
+At = U.T.conj().dot(Zp).dot(V) * np.reciprocal(S)
+
 #%%
 
 # Perform DMD on all data through April 1997.  By setting the SVD rank
@@ -51,7 +61,7 @@ dmd = DMD(svd_rank=5, opt=False, exact=True)#, max_level=4)
 
 times = list(range(0, len(snapshots[0, :])))
 skip = 1
-end = 15#num_times-1
+end = num_times
 dmd.original_time = {'t0': 0, 'tend': times[:end:skip][-1], 'dt': skip}
 dmd.fit(snapshots[:, :end:skip]) 
 
@@ -79,7 +89,7 @@ def generate_dmd_basis(dmd, times=None):
         temporal = np.exp(omega[r] * times) #* dmd._b[r]
         spatial = dmd.modes[:, r]
         basis[:, r] = np.kron(spatial, temporal)#, spatial)
-        basis[:, r] = basis[:, r] / np.linalg.norm(basis[:, r])
+        basis[:, r] = basis[:, r] / np.linalg.norm(basis[:, r].real)
     return basis
 
 
@@ -88,8 +98,13 @@ def generate_dmd_basis(dmd, times=None):
 Z = np.array(df['z'], dtype='float')
 
 B = generate_dmd_basis(dmd)
+B = B[:,:]
 Q = B@np.linalg.lstsq(B, Z)[0]
 Q = Q.real
+
+B = B[:,[0,1,3]].real
+Q2 = B@np.linalg.lstsq(B, Z)[0]
+Q2 = Q2.real
 
 R = dmd.reconstructed_data.real.reshape((4092,))
 #Q = Q.reshape((num_locs, num_times))

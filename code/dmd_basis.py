@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas
-from pydmd import DMD as DMD
+from pydmd import MrDMD as DMD
 
 #%%
 
@@ -66,22 +66,21 @@ def maskit(a, mask, bad_value = -999):
 # onto the reduced space (but we don't need these).  By setting exact to True,
 # we get DMD modes that are exact eigenvectors of A as presented in the
 # report.
-dmd = DMD(svd_rank=-1, opt=True, exact=True)
+dmd = DMD(svd_rank=-1, opt=True, exact=True)#, max_level=4, max_cycles=3)
 
 times = list(range(0, len(snapshots[0, :])))
 skip = 1
-dmd.original_time = {'t0': 0, 'tend': times[:-9:skip][-1], 'dt': skip}
-dmd.fit(snapshots[:, :-9:skip]) 
-a4a = dmd.reconstructed_data[:, 1].copy()
+end = -9
+dmd.original_time = {'t0': 0, 'tend': times[:end:skip][-1], 'dt': skip}
+dmd.fit(snapshots[:, :end:skip]) 
 
 dmd.dmd_time = {'t0': 0, 'tend': times[-1]/skip, 'dt': 1/skip}
-a4b = dmd.reconstructed_data[:, 4].copy()
 
 
 
 #%%
 
-step = -9
+step = 327
 
 april_1997 = maskit(snapshots[:, step], spatial_mask)
 april_1997_appx = maskit(dmd.reconstructed_data[:, step], spatial_mask)

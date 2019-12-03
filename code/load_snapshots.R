@@ -5,6 +5,11 @@
 library("dplyr")
 library("STRbook")
 
-data("SST_df", package = "STRbook")
-SST_snapshots <- filter(SST_df, Year <= 1997)  # filter the NA dates
-write.csv(SST_snapshots,"SST_df.csv", row.names = FALSE)
+#data("SST_df", package = "STRbook")
+#SST_snapshots <- filter(SST_df, Year <= 1997)  # filter the NA dates
+#write.csv(SST_snapshots,"SST_df.csv", row.names = FALSE)
+
+
+data("NOAA_df_1990", package = "STRbook")
+NOAA_snapshots <- filter(NOAA_df_1990, year == 1993, month == 7, proc=="Tmax")  # filter the NA dates
+write.csv(NOAA_snapshots,"NOAA_df.csv", row.names = FALSE)

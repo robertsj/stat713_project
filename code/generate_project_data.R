@@ -23,7 +23,7 @@ for (station in unique(NOAA_snapshots$id)){
 }
 
 # Filter the snapshots again, keeping just those stations with measurements
-# on each day.
+# on each day.  
 NOAA_snapshots2 <- filter(NOAA_snapshots,id%in%keep)
 
 # Save to CSV for processing in the tutorial.

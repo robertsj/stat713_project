@@ -32,6 +32,8 @@ num_locs = len(keep)
 
 
 #%%
+
+
 snapshots = np.array(np.array(df['z'], dtype='float').reshape(num_locs, num_times))
 snapshots = snapshots[:,:]
 num_times = len(snapshots[0, :])
@@ -49,6 +51,7 @@ S = S[:rank]
 V = V[:, :rank]
 At = U.T.conj().dot(Zp).dot(V) * np.reciprocal(S)
 
+
 #%%
 
 # Perform DMD on all data through April 1997.  By setting the SVD rank
@@ -57,7 +60,7 @@ At = U.T.conj().dot(Zp).dot(V) * np.reciprocal(S)
 # onto the reduced space (but we don't need these).  By setting exact to True,
 # we get DMD modes that are exact eigenvectors of A as presented in the
 # report.
-dmd = DMD(svd_rank=5, opt=False, exact=True)#, max_level=4)
+dmd = DMD(svd_rank=5, opt=True, exact=True)#, max_level=4)
 
 times = list(range(0, len(snapshots[0, :])))
 skip = 1
@@ -89,7 +92,7 @@ def generate_dmd_basis(dmd, times=None):
         temporal = np.exp(omega[r] * times) #* dmd._b[r]
         spatial = dmd.modes[:, r]
         basis[:, r] = np.kron(spatial, temporal)#, spatial)
-        basis[:, r] = basis[:, r] / np.linalg.norm(basis[:, r].real)
+        #basis[:, r] = basis[:, r] / np.linalg.norm(basis[:, r].real)
     return basis
 
 
@@ -102,16 +105,17 @@ B = B[:,:]
 Q = B@np.linalg.lstsq(B, Z)[0]
 Q = Q.real
 
-B = B[:,[0,1,3]].real
+B = B[:,:].real
 Q2 = B@np.linalg.lstsq(B, Z)[0]
 Q2 = Q2.real
 
-R = dmd.reconstructed_data.real.reshape((4092,))
-#Q = Q.reshape((num_locs, num_times))
+R = dmd.reconstructed_data.real
+Q2 = Q.reshape((num_locs, num_times))
 
+plt.plot(times,snapshots[29,:],'o', times, Q2[29,:],'x')
 
 #%%
-k = 2
+k = 1
 actual = snapshots[:, k]
 predict = dmd.reconstructed_data[:, k]
 
@@ -122,7 +126,7 @@ plt.figure(2)
 plt.plot(coords, predict/actual, 'r')
 
 plt.figure(3)
-plt.pcolor(abs(dmd.reconstructed_data.real/snapshots-1)*100,vmax=40); plt.colorbar()
+plt.pcolor(snapshots); plt.colorbar()
 
 plt.figure(4)
-plt.pcolor(abs(dmd.reconstructed_data.real-snapshots)); plt.colorbar()
+plt.pcolor(Q2); plt.colorbar()

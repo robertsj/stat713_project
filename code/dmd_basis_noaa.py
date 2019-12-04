@@ -60,11 +60,11 @@ At = U.T.conj().dot(Zp).dot(V) * np.reciprocal(S)
 # onto the reduced space (but we don't need these).  By setting exact to True,
 # we get DMD modes that are exact eigenvectors of A as presented in the
 # report.
-dmd = DMD(svd_rank=5, opt=True, exact=True)#, max_level=4)
+dmd = DMD(svd_rank=5, opt=False, exact=True)#, max_level=4)
 
 times = list(range(0, len(snapshots[0, :])))
 skip = 1
-end = num_times
+end = 10
 dmd.original_time = {'t0': 0, 'tend': times[:end:skip][-1], 'dt': skip}
 dmd.fit(snapshots[:, :end:skip]) 
 

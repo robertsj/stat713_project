@@ -126,7 +126,13 @@
 
 % 100–300 word summary of your report
 \begin{abstract}
-
+Dynamic Mode Decomposition (DMD) is a method for decoupling the spatio-temporal dynamics of an observed system.
+Here, DMD was used to produce spatio-temporal basis functions for the analysis of spatially-discrete but temporally
+continuous processes (measured at discrete time intervals).
+The basis use of DMD for producing basis vectors is prescribed, and a key features of the method are highlighted.
+The method is used to form basis vectors for a standard, linear model of temperature measurements distributed across the United States.
+The model is compared to a polynomial method, and the results indicate the DMD basis vectors capture spatio-temporal variation more efficiently.
+Though preliminary, the work suggests that DMD may find use in spatio-temporal, statistical modeling.
 \end{abstract}
 
 \begin{keyword}
@@ -274,8 +280,8 @@ which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
 Moreover, the basis vectors can be complex valued, which indicates oscillatory dynamics in the system and, in principle, may lead to  numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
 However, complex modes always appear in conjugate pairs. 
-Hence, if both modes are included in the basis, the opposing, imaginary components will cancel upon projection of a real-valued quantity onto the basis.
-In other words, the real part of the conjugate pair may be kept, reducing the apparent basis rank by one (but, in fact, removing a superfluous degree of freedom).
+Hence, if both modes are included in the basis, the opposing, imaginary components will cancel upon projection of a real-valued quantity onto the basis in the absence of roundoff errors.
+In other words, the real part of the conjugate pair may be kept as one basis vector, and complex values can be eliminated altogether from the final, linear model\footnote{In practice, 128-bit, complex arithmetic with the additional degrees of freedom offered by the conjugate modes may actually improve accuracy a bit.}.
 
 Given the basis $\boldsymbol{\Psi}$, the maximum-likelihood estimates of the parameters $\boldsymbol{\beta}$ and $\sigma^2_{\varepsilon}$ of Eq.~(\ref{eq:linmodel}) can be made.
 These estimates provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).  
@@ -290,7 +296,62 @@ For the present work, the number of modes computed (i.e., the rank $r$ in Eq.~\r
 \label{sec:results}
 % 500--1000 words
 
+To illustrate the use of DMD for constructing basis functions, a statistical model was constructed for the maximum temperature recorded at each of over 100 weather stations located in the midwestern and southeastern United Stated. 
+The data used is distributed with the software developed in support of Ref.~\cite{wikle2019sts} but was originally extracted from the National Oceanic Atmospheric Administration (NOAA) IRI/LDEO Climate Data Library.
+The specific case studied is an adaptation of an exercise presented in Ref.~\cite{wikle2019sts} in which spatial, temporal, and spatio-temporal basis functions are explored for predicting the maximum temperature at arbitrary points in space and time.
+However, because DMD produces spatially-discrete basis vectors, the exercise was modified to produce spatially-discrete models.
 
+Specifically, models were developed for the maximum temperature at each station during July of 1993.
+To simplify the application of DMD, data was included only from the 132 stations for which measurements were made on each of the 31 days.
+Two DMD-based models were constructed, each using three spatio-temporal basis functions; in all cases, the SVD rank $r$ was set to 5, but elimination of complex conjugate pairs resulted in just three vectors.
+In other words, each model had the form
+\begin{equation}
+ \boldsymbol{\zeta} \sim \mathcal{N}(\boldsymbol{\Psi}\boldsymbol{\beta}, \sigma^2 \mathbf{I}) \, ,
+\end{equation}
+where, of note, $\beta_0$ does {\it not} correspond to an intercept.
+The first DMD model, referred to as {\tt dmd-full}, was constructed using all 31 days of measurements, both for the basis definition and the regression (using {\tt lm}).  
+The second DMD model, referred to as {\tt dmd-partial}, was constructed using the first 28 days of measurements, again for the basis and regression.
+For comparison (albeit, an uninspiring one), a polynomial model was used of the form
+\begin{equation}
+\begin{split}
+ \zeta_k = \beta_0 &+ \beta_1 t_k + \beta_2 a_k + \beta_2 o_k + \beta_3 t_k a_k \\
+                   &+ \beta_4 t_k o_k + \beta_5 a_k o_k  + \varepsilon \, ,
+\end{split}
+\end{equation}
+where $t_k$, $a_k$, and $o_k$ represent time, latitude, and longitude of the $k$th measurement, and $\varepsilon \sim N(0, \sigma^2)$.
+This model was fitted using the same partial or full set of data ({\tt poly-partial} and {\tt poly-full}).
+
+Shown in Figs.~\ref{fig:dmd_full}--\ref{fig:poly_part} are the predicted, maximum temperatures at station 14943.
+Additionally, the 95\% prediction intervals are shown.
+
+
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.5\textwidth]{../code/plot_dmd_full.pdf}\\
+   \caption{Prediction and prediction intervals for {\tt dmd-full}.}
+  \label{fig:dmd_full}
+\end{figure}
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.5\textwidth]{../code/plot_dmd_part.pdf}\\
+   \caption{Prediction and prediction intervals for {\tt dmd-part}.}
+  \label{fig:dmd_part}
+\end{figure}
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.5\textwidth]{../code/plot_poly_full.pdf}\\
+   \caption{Prediction and prediction intervals for {\tt poly-part}.}
+  \label{fig:poly_full}
+\end{figure}
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.5\textwidth]{../code/plot_poly_part.pdf}\\
+   \caption{Prediction and prediction intervals for {\tt poly-part}.}
+  \label{fig:poly_part}
+\end{figure}
+
+All four models appear to capture the observations reasonably well.
+Of some interest is that each of the DMD covariates (the basis vectors) had corresponding $p$ values below $10^{-5}$, indicates their apparent importance.
 
 
 
@@ -298,9 +359,15 @@ For the present work, the number of modes computed (i.e., the rank $r$ in Eq.~\r
 \section{Discussion}
 \label{sec:discusion}
 % 500--1000 words
-% The discussion should place your results into the context of existing
-% work and explore what additional research still needs to be done.
 
+Dynamic mode decomposition was shown to generate spatio-temporal basis functions for discrete-space, continuous-time modeling.
+The analysis described is very preliminary, but the results demonstrate that the basis functions produced lead to functioning models.
+The mechanics of the process (evaluation of the vectors for different times, etc.) requires further development to facilitate continued study.
+However, the process has been implemented entirely in R, and so continued work should be reasonably straightforward.
+
+Further work should pursue the use of the DMD basis in conjunction with continuous treatments of space. 
+In particular, it seems plausible the DMD modes could be used directly to inform spatio-temporal correlation functions for Gaussian-process models.
+Finally, based on the literature surveyed so far, it does not seem DMD has been applied {\it by name} in the statistics community, but the similarity between it and more advanced spatio-temporal models suggests that there may be significant overlap between DMD and other methods (but this has not yet been identified).
 
 \section*{References}
 \bibliographystyle{elsarticle-num} 

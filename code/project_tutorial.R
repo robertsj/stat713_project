@@ -65,7 +65,7 @@ Z <- t(matrix(as.numeric(df$z), num_time, num_locs, byrow = FALSE))
 
 # First several days to use for fitting and basis generation for 
 # testing forecasting
-t.part <- 21
+t.part <- 28
 
 # Do the DMD with all of the snapshots and assume a delta t of 1 day.
 # Note, time is assumed to start at 0 in this simple implementation.
@@ -73,7 +73,7 @@ dmd_full <- compute_dmd(Z, rank=5, delta.t=1.0)
 
 # Do the DMD part of the snapshots and assume a delta t of 1 day.
 # Note, time is assumed to start at 0 in this simple implementation.
-dmd_part <- compute_dmd(Z[, 1:15], rank=5, delta.t=1.0)
+dmd_part <- compute_dmd(Z[, 1:t.part], rank=5, delta.t=1.0)
 
 # Add translated time to data frame
 df <- mutate(df, t=df$julian-min(df$julian))
@@ -97,29 +97,36 @@ model_poly_full <- lm(z~(t+lat+lon)^2, data=filter(df, t<=t.part))
 model_poly_part <- lm(z~(t+lat+lon)^2, data=df)
 
 # Predictions for all of July at spatial point
-location <- 30
-id <- unique(df$id)[location]
-p_dmd_full <- predict(model_dmd_full, newdata=filter(make_dmd_df(df, dmd_full), id==id), interval="prediction")
-p_dmd_part <- predict(model_dmd_part, newdata=filter(make_dmd_df(df, dmd_part), id==id), interval="prediction")
-p_poly_full <- predict(model_poly_full, newdata=filter(df, id==id), interval="prediction")
-p_poly_part <- predict(model_poly_part, newdata=filter(df, id==id), interval="prediction")
+p_dmd_full <- cbind(df, predict(model_dmd_full, newdata=make_dmd_df(df, dmd_full), interval="prediction"))
+p_dmd_part <- cbind(df, predict(model_dmd_part, newdata=make_dmd_df(df, dmd_part), interval="prediction"))
+p_poly_full <- cbind(df, predict(model_poly_full, newdata=df, interval="prediction"))
+p_poly_part <- cbind(df, predict(model_poly_part, newdata=df, interval="prediction"))
 
 library("ggplot2")
 
-make_prediction_plot <- function(df, p, location){
-  id <- unique(df$id)[location]
-  p <- ggplot(cbind(df, p), aes(t, z)) +
-    geom_point() +
-    stat_smooth(method = lm)
-  p + geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
-    geom_line(aes(y = upr), color = "red", linetype = "dashed")
+make_prediction_plot <- function(pred, location){
+
+  myid <- unique(pred$id)[location]
+  plot_df <- filter(pred, id==myid)
+  p <- ggplot(plot_df, aes(t, z)) +
+       geom_point() +
+       geom_line(aes(y = fit), color="blue") +
+       geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+       geom_line(aes(y = lwr), color = "red", linetype = "dashed") 
+
   return(p)
 }
 
-location <- 1
-plot_dmd_full <-make_prediction_plot(filter(df, id==id), p_dmd_full, location)
-print(plot_dmd_full)
+location <- 99
+plot_dmd_full <-make_prediction_plot(p_dmd_full, location)
+plot_dmd_part <-make_prediction_plot(p_dmd_part, location)
+plot_poly_full <-make_prediction_plot(p_poly_full, location)
+plot_poly_part <-make_prediction_plot(p_poly_part, location)
 
+ggsave('plot_dmd_full.pdf', plot_dmd_full)
+ggsave('plot_dmd_part.pdf', plot_dmd_part)
+ggsave('plot_poly_full.pdf', plot_poly_full)
+ggsave('plot_poly_part.pdf', plot_poly_part)
 
 
 

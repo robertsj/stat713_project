@@ -24,7 +24,7 @@ data("NOAA_df_1990", package = "STRbook")
 df <- filter(NOAA_df_1990, year==1993, month==7, proc=="Tmax")
 ```
 
-Now, we need to clean up the data to include only those stations that have measurements for each day of the month.  This greatly simplifies the  DMD analysis, which is based on a dense [space, time] snapshot matrix.
+Now, we need to clean up the data to include only those stations that have measurements for each day of the month.  This greatly simplifies the DMD analysis, which is based on a dense [space, time] snapshot matrix.
 
 There are 31 days in July, so search for all those station id's that have 31 measurements and filter the data to include only those.
 
@@ -85,5 +85,39 @@ To support these steps, several functions are implemented in `dmd.R`:
   - `compute_svd(Z, r)` computes the SVD of a matrix $\mathbf{Z}$ with a specified rank $r$.  If $r > 0$, the leading $r$ singular vectors and values are retained.  If $r = 0$, the optimal rank is selected (based on the criterion of Davish and Donoho).  If $r < 0$, then the maximum possible rank is used (i.e., $\text{max}(n, m)$ for $\mathbf{Z}\in \mathbb{R}^{m\times n}$).  A `list` with entries `u`, `v`, and `d` is returned, just like the R-function `svd`.
   - `compute_dmd(Z, rank, delta.t)` computes the DMD modes and frequencies given $\mathbf{Z}$, a desired rank, and a fixed $\Delta_t$.  The rank is the same used for the SVD.  However, because complex-conjugate pairs are reduced to their real components, the final rank of the DMD modes may be reduced.  A list with entries `Phi`, `omega`, `rank`, and `delta.t` is returned, where this `rank` is the final one.
   - `compute_dmd_basis(dmd, t)` computes the DMD basis vectors given the modes `dmd$Phi`, frequencies `dmd$omega`, and times `t`.  The matrix `\boldsymbol{\Psi} \in \mathbb{R}^{mn, r}$ is returned, where $r$ is the number of DMD modes.
-  - `insert_dmd_df(dmd), df)` inserts a DMD basis computed using `dmd` into a dataframe `df`.
+  - `df_add_dmd(df, dmd)` inserts a DMD basis computed using `dmd` into a dataframe `df`.  The dataframe must have observations organized in a regular space-time grid (with time as the inner variable).  Times may be arbitrary (relative to a starting point of 0), but spatial points must be consistent with those of the DMD modes.  Columns added are `Psi.1`, `Psi.2`, ..., `Psi.R`.
+  - `lm_with_dmd(df, rank)` produces a linear model using the equivalent of `z ~ Psi.1 + Psi.2 + ... + Psi.R - 1`, i.e., the intercept is removed because `Psi.1` captures the "average" dynamics.  Returns a list with `model` and `dmd` attributes.
+  - `predict_with_dmd(df, dmdmodel)` is given (a possibly new) dataframe and list `dmdmodel` from `lm_with_dmd`.  Returns the result of `predict` with 95% prediction intervals.
+  
+  
+# Inspecting DMD Modes
+
+With the helper functions in place, it is useful to examine what goes into a DMD basis.  Here, the full SVD and the optimally truncated SVD are computed to show where the "optimal" criterion sits for this data:
+
+```{r}
+source("dmd.R")
+library(latex2exp)
+
+svd_f <- compute_svd(Z, rank=-1)
+svd_t <- compute_svd(Z, rank=0)
+plot(svd_f$d, log="y", col="black", type="o", , xlab="", ylab="")
+title(xlab=TeX('$i$'), ylab=TeX('$\\sigma_i$'))
+r <- length(svd_t$d)
+text(x=10, y=svd_t$d[r], labels = sprintf("optimal rank is %i", r), pos = 3., adj=c(0,0), col="red")
+points(svd_t$d, col="red", type="o")
+```
+
+The optimal rank is `r r`.
+
+With this rank, compute the DMD modes and amplitudes.  
+
+```{r}
+dmd <- compute_dmd(Z, rank=0)
+lats <- filter(df, t==1)$lat #
+plot(lats, dmd$Phi[, 1])
+for (r in 2:dmd$rank){
+  points(lats, dmd$Phi[, 2])
+}
+```
+  
 

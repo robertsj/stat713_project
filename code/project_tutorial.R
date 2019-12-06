@@ -44,7 +44,7 @@ make_dmd_df <- function(df, dmd){
 
 # Make DMD model based on all data set and fit against all data
 model_dmd_full <- lm(z~a+b+c-1, data=make_dmd_df(df, dmd_full))
-# Make DMD model based on first 21 days and fit against those same days
+# Make DMD model based on first df21 days and fit against those same days
 model_dmd_part <- lm(z~a+b+c-1, data=make_dmd_df(filter(df, t<=t.part), dmd_part))
 # Make second-order polynomial model based on all data
 model_poly_full <- lm(z~(t+lat+lon)^2, data=filter(df, t<=t.part))

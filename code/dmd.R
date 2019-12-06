@@ -18,7 +18,7 @@ compute_svd <- function(Z, rank){
     omega <- 0.56*beta^3 - 0.95*beta^2 + 1.82*beta + 1.43
     rank = sum(USV$d >= omega*median(USV$d))
   }
-  else if (rank < 0) {
+  else if (rank < 0 || rank > min(dim(Z))) {
     rank = min(dim(Z))
   }
   stopifnot(rank > 0)
@@ -26,7 +26,11 @@ compute_svd <- function(Z, rank){
   # need explicit matrix objects
   USV$u <- as.matrix(USV$u[,1:rank])
   USV$v <- as.matrix(USV$v[,1:rank])
-  USV$d <- as.vector(USV$d[1:rank])
+  USV$d <- USV$d[1:rank]
+  if (rank==1){
+    USV$d <- as.matrix(USV$d)
+  }
+  
   return(USV)
 }
 
@@ -44,8 +48,7 @@ compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, discard_pairs=TRUE){
   U.r <- USV$u
   V.r <- USV$v
   S.r <- USV$d
-  print(sprintf("dim U V S = %i %i %i", dim(U.r)[1], dim(V.r)[1], length(S.r)))
-  
+
   # Compute the low-rank operator and its spectrum
   A.tilde <- Conj(t(U.r)) %*% Z.plus %*% V.r %*% diag(1.0/S.r)
   WL <- eigen(A.tilde)
@@ -64,6 +67,8 @@ compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, discard_pairs=TRUE){
     omega <- omega[keep]
     Phi <- Phi[,keep]
   }
+  
+  Phi <- as.matrix(Phi)
   
   dmd <- list(Phi=Phi, omega=omega, rank=length(omega), t.0=t.0, delta.t=delta.t)
   return(dmd)

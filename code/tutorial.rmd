@@ -69,7 +69,7 @@ heat$z <- df$z
 ggplot(heat, aes(location, time, fill=z)) + geom_tile() + scale_fill_viridis_c(option="inferno")
 ```
 
-# A DMD-generated Basis for Statistical Linear Modeling 
+# A DMD-Generated Basis for Statistical Linear Modeling: The Basic Approach
 
 Given $\mathbf{Z}$, $\mathbf{Z}_- = \mathbf{Z}_{:,1:n-1}$, and $\mathbf{Z}_+ = \mathbf{Z}_{:, 2:n}$, the DMD algorithm employs the SVD to compute a rank-$r$ operator $\mathbf{A}_r$ that approximately satisfies $\mathbf{Z}_+ = \mathbf{A}_r\mathbf{Z}_-$.  The eigenvectors $\boldsymbol{\phi}_i$ of $\mathbf{A}_r$ are the DMD "modes", while  the corresponding eigenvalues $\lambda_i$ yield the DMD frequencies $\omega_i = \log \lambda_i / \Delta_t$ for observations separated by a fixed $\Delta_t$ in time.
 
@@ -100,24 +100,99 @@ library(latex2exp)
 
 svd_f <- compute_svd(Z, rank=-1)
 svd_t <- compute_svd(Z, rank=0)
-plot(svd_f$d, log="y", col="black", type="o", , xlab="", ylab="")
+plot(svd_f$d, log="y", col="black",  xlab="", ylab="")
 title(xlab=TeX('$i$'), ylab=TeX('$\\sigma_i$'))
 r <- length(svd_t$d)
 text(x=10, y=svd_t$d[r], labels = sprintf("optimal rank is %i", r), pos = 3., adj=c(0,0), col="red")
-points(svd_t$d, col="red", type="o")
+points(svd_t$d, col="red", pch=18)
 ```
 
 The optimal rank is `r r`.
 
-With this rank, compute the DMD modes and amplitudes.  
+With this rank, compute the DMD modes and amplitudes.  Here, just four modes are kept due to elimination of complex conjugates.  These are normalized to 1 and shown as a function of station latitude.  The first mode captures the anticipated dependence on latitude, i.e., with increasing latitude, the temperature should drop off.  The specific "sign" of $\boldsymbol{\phi}_1$ is coincidentally in the right direction, but its the negative correlation that is important.  The other modes are far harder to interpret.
 
 ```{r}
 dmd <- compute_dmd(Z, rank=0)
-lats <- filter(df, t==1)$lat #
-plot(lats, dmd$Phi[, 1])
-for (r in 2:dmd$rank){
-  points(lats, dmd$Phi[, 2])
+tmp <- sort(filter(df, t==1)$lat, index.return=TRUE)
+ix <- tmp$ix
+lats <- tmp$x
+par(mfrow=c(2, 2))
+for (r in 1:4)
+{
+  y <-  Re(dmd$Phi[ix,r])
+  y <- y / sqrt(sum(y^2))
+  plot(lats, y, type="o", xlab="", ylab="")
+  title(xlab="latitude (deg.)", ylab=TeX(sprintf("$\\phi_{%i}$", r)))
 }
 ```
   
+# Reconstructing The Original Data
+
+Given the entire set of data $\mathbf{Z}$, how well can the DMD modes be used to recapture that data?  Below, three DMD models are used to predict the temperature at each location and day.  These models use 3, 4, and 16 (the maximum possible given elimination of complex-conjugate pairs).  The errors are shown to the right.  As an alternative, several polynomial models are also constructed.  The title of each image summarizes the model, the (estimated) adjusted $R^2$, and the AIC value.
+
+```{r tidy=TRUE,message=FALSE,warning=FALSE, fig.height=10, fig.width=8}
+require(gridExtra)
+
+models = list()
+# Make DMD models and predictions
+for (r in c(5, 7, -1)){
+  tmp <- lm_with_dmd(df, rank=r)
+  tmp$pred <- predict_with_dmd(df, tmp$model, tmp$dmd)
+  tmp$desc <- sprintf("DMD, rank=%i", tmp$dmd$rank)
+  models[[length(models)+1]] <- tmp
+}
+# Make linear
+tmp  <- list(model=lm(z ~ (t+lat+lon), data=df))
+tmp$pred <- predict(tmp$model, interval="prediction")
+tmp$desc <- sprintf("z ~ (t+lat+lon)")
+models[[length(models)+1]] <- tmp
+# Make bi-linear polynomial model and prediction
+tmp  <- list(model=lm(z ~ (t+lat+lon)^2, data=df))
+tmp$pred <- predict(tmp$model, interval="prediction")
+tmp$desc <- sprintf("z ~ (t+lat+lon)^2")
+models[[length(models)+1]] <- tmp
+# Make bi-quadratic polynomial model and prediction
+tmp  <- list(model=lm(z ~ (t+lat+lon)^3, data=df))
+tmp$pred <- predict(tmp$model, interval="prediction")
+tmp$desc <- sprintf("z ~ (t+lat+lon)^3")
+models[[length(models)+1]] <- tmp
+
+# Given data, the model, and the prediction, make a plot of the prediction,
+# make a plot of the prediction error, and compute a few key quantities.
+p = list()
+for (i in 1:length(models)){
+  
+  m <- models[[i]]
+
+  heat <- expand.grid(time=1:num_time, location=1:num_locs)
+  
+  
+  heat$z <-m$pred[, 1]
+  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) +
+                        geom_tile() + theme_void() + labs(title=m$desc) +
+                        scale_fill_continuous(limits=c(65, 105), type = "viridis", option="inferno")
+  
+  aic <- AIC(m$model)
+  desc <- sprintf("AIC = %.2f", aic)
+  heat$z <- m$pred[, 1] - df$z
+  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) + 
+                        geom_tile() + scale_fill_distiller(palette = "Spectral", limits=c(-10, 20)) + theme_void() +
+                        labs(title=desc) 
+}
+
+grid.arrange(grobs=p, ncol=2,padding=20)
+```
+
+From these results, it appears the DMD-based models are not competing with the simpler polynomial models based on AIC.  Before moving on, it's worth examining the impact of DMD rank on AIC.  As noted, the "optimal" rank is based on an optimally truncated SVD that is itself based on statistical considerations.  Here, AIC is computed for DMD as a function of rank.  Note, complex-conjugate pairs are not reduced to one basis vector this time, though `lm` does in all cases eliminate the singularities.
+
+```{r}
+aic <- zer
+ranks <- list()
+for (r in 1:31){
+  m <- lm_with_dmd(df, rank=r, discard_pairs=FALSE)
+  ranks[[r]] <- m$dmd$rank
+  aic[[r]] <- AIC(m$model)
+}
+plot(ranks, aic,xlab="DMD rank", ylab="AIC")
+```
 

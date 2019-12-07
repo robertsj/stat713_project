@@ -67,6 +67,7 @@ library(ggplot2)
 heat <- expand.grid(time=1:num_time, location=1:num_locs)
 heat$z <- df$z
 ggplot(heat, aes(location, time, fill=z)) + geom_tile() + scale_fill_viridis_c(option="inferno")
+ggsave("snapshots.pdf")
 ```
 
 # A DMD-Generated Basis for Statistical Linear Modeling: The Basic Approach
@@ -94,17 +95,18 @@ To support these steps, several functions are implemented in `dmd.R`:
 
 With the helper functions in place, it is useful to examine what goes into a DMD basis.  Here, the full SVD and the optimally truncated SVD are computed to show where the "optimal" criterion sits for this data:
 
-```{r}
+```{r,  fig.height=3, fig.width=5}
 source("dmd.R")
 library(latex2exp)
-
+pdf("singular_values.pdf",width=5,height=4)
 svd_f <- compute_svd(Z, rank=-1)
 svd_t <- compute_svd(Z, rank=0)
 plot(svd_f$d, log="y", col="black",  xlab="", ylab="")
 title(xlab=TeX('$i$'), ylab=TeX('$\\sigma_i$'))
 r <- length(svd_t$d)
-text(x=10, y=svd_t$d[r], labels = sprintf("optimal rank is %i", r), pos = 3., adj=c(0,0), col="red")
+text(x=12, y=1.1*svd_t$d[r], labels = sprintf("optimal rank is %i", r), pos = 3., adj=c(0,0), col="red")
 points(svd_t$d, col="red", pch=18)
+dev.off()
 ```
 
 The optimal rank is `r r`.
@@ -116,6 +118,7 @@ dmd <- compute_dmd(Z, rank=0)
 tmp <- sort(filter(df, t==1)$lat, index.return=TRUE)
 ix <- tmp$ix
 lats <- tmp$x
+pdf("dmd_modes.pdf")
 par(mfrow=c(2, 2))
 for (r in 1:4)
 {
@@ -124,13 +127,14 @@ for (r in 1:4)
   plot(lats, y, type="o", xlab="", ylab="")
   title(xlab="latitude (deg.)", ylab=TeX(sprintf("$\\phi_{%i}$", r)))
 }
+dev.off()
 ```
   
 # Reconstructing The Original Data
 
 Given the entire set of data $\mathbf{Z}$, how well can the DMD modes be used to recapture that data?  Below, three DMD models are used to predict the temperature at each location and day.  These models use 3, 4, and 16 (the maximum possible given elimination of complex-conjugate pairs).  The errors are shown to the right.  As an alternative, several polynomial models are also constructed.  The title of each image summarizes the model, the (estimated) adjusted $R^2$, and the AIC value.
 
-```{r tidy=TRUE,message=FALSE,warning=FALSE, fig.height=10, fig.width=8}
+```{r tidy=TRUE,message=FALSE,warning=FALSE, fig.height=10, fig.width=8.25}
 require(gridExtra)
 
 models = list()
@@ -141,32 +145,23 @@ for (r in c(5, 7, -1)){
   tmp$desc <- sprintf("DMD, rank=%i", tmp$dmd$rank)
   models[[length(models)+1]] <- tmp
 }
-# Make linear
-tmp  <- list(model=lm(z ~ (t+lat+lon), data=df))
-tmp$pred <- predict(tmp$model, interval="prediction")
-tmp$desc <- sprintf("z ~ (t+lat+lon)")
-models[[length(models)+1]] <- tmp
-# Make bi-linear polynomial model and prediction
-tmp  <- list(model=lm(z ~ (t+lat+lon)^2, data=df))
-tmp$pred <- predict(tmp$model, interval="prediction")
-tmp$desc <- sprintf("z ~ (t+lat+lon)^2")
-models[[length(models)+1]] <- tmp
-# Make bi-quadratic polynomial model and prediction
-tmp  <- list(model=lm(z ~ (t+lat+lon)^3, data=df))
-tmp$pred <- predict(tmp$model, interval="prediction")
-tmp$desc <- sprintf("z ~ (t+lat+lon)^3")
-models[[length(models)+1]] <- tmp
+for (i in 1:3)
+{
+  desc <- "z ~ (t+lat+lon)"
+  if (i > 1){desc <- sprintf("z ~ (t+lat+lon)^%i",i)}
+  tmp  <- list(model=lm(formula(desc), data=df))
+  tmp$pred <- predict(tmp$model, interval="prediction")
+  tmp$desc <- desc
+  models[[length(models)+1]] <- tmp
+}
 
 # Given data, the model, and the prediction, make a plot of the prediction,
 # make a plot of the prediction error, and compute a few key quantities.
 p = list()
 for (i in 1:length(models)){
-  
   m <- models[[i]]
 
   heat <- expand.grid(time=1:num_time, location=1:num_locs)
-  
-  
   heat$z <-m$pred[, 1]
   p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) +
                         geom_tile() + theme_void() + labs(title=m$desc) +
@@ -174,25 +169,111 @@ for (i in 1:length(models)){
   
   aic <- AIC(m$model)
   desc <- sprintf("AIC = %.2f", aic)
-  heat$z <- m$pred[, 1] - df$z
-  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) + 
-                        geom_tile() + scale_fill_distiller(palette = "Spectral", limits=c(-10, 20)) + theme_void() +
+  heat$error <- m$pred[, 1] - df$z
+  print(sprintf("%.2f %.2f", max(heat$error), min(heat$error)))
+
+  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=error)) + 
+                        geom_tile() + scale_fill_distiller(palette = "Spectral", limits=c(-25, 25)) + theme_void() +
                         labs(title=desc) 
+  
+  p[[length(p) + 1]]  <- ggplot(filter(cbind(df, m$pred), id==14943), aes(t, z)) +
+       geom_point() +
+       geom_line(aes(y = fit), color="blue") +
+       geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+       geom_line(aes(y = lwr), color = "red", linetype = "dashed") 
 }
 
-grid.arrange(grobs=p, ncol=2,padding=20)
+q <- grid.arrange(grobs=p, ncol=3)
+ggsave("model_comparison.png", q, dpi = 600, width = 12, height = 12, units = "in")
+ggsave("model_comparison.pdf", q, dpi = 600, width = 12, height = 12, units = "in")
+
 ```
 
-From these results, it appears the DMD-based models are not competing with the simpler polynomial models based on AIC.  Before moving on, it's worth examining the impact of DMD rank on AIC.  As noted, the "optimal" rank is based on an optimally truncated SVD that is itself based on statistical considerations.  Here, AIC is computed for DMD as a function of rank.  Note, complex-conjugate pairs are not reduced to one basis vector this time, though `lm` does in all cases eliminate the singularities.
+From these results, it appears the DMD-based models lead to lower AIC values than the simple polynomial models. 
+Moreover, the DMD model based on the full SVD yields the lowest AIC value despite having the largest number of parameters to estimate.
+Hence, let's investigate the impact of DMD rank on AIC.  As noted, the "optimal" rank is based on an optimally truncated SVD that is itself based on statistical considerations.  Here, AIC is computed for DMD as a function of rank.  Note, complex-conjugate pairs are not reduced to one basis vector this time, though `lm` does in all cases eliminate the singularities.
 
 ```{r}
-aic <- zer
+aic <- list()
 ranks <- list()
+pdf("dmd_aic.pdf",width=5,height=3.5)
 for (r in 1:31){
   m <- lm_with_dmd(df, rank=r, discard_pairs=FALSE)
-  ranks[[r]] <- m$dmd$rank
   aic[[r]] <- AIC(m$model)
+  #s <- sprintf("selected rank=%i  num pred=%i  aic=%.2f", m$dmd$rank, , aic[[r]])
+  ranks[[r]] <- r-sum(is.na(m$model$coefficients))
 }
-plot(ranks, aic,xlab="DMD rank", ylab="AIC")
+plot(1:31, aic,xlab="DMD rank", ylab="AIC")
+dev.off()
 ```
 
+The results indicate that the AIC generally decreases by a small amount as the number of modes include increases, with notable deviations between 20 and 26.  Recall that the optimal SVD was 7, for which 4 DMD modes are retained (3 complex pairs reduced to 3 modes).
+
+Because AIC is itself a statistic, a more careful comparison would estimate confidence intervals for AIC.  However, because the DMD basis requires multiple steps to construct and requires a constant space-time grid, handling of resampled data would be a major challenge.
+
+```{r tidy=TRUE,message=FALSE,warning=FALSE}
+for (i in 1:6)
+{
+  print(summary(models[[i]]$model))
+}
+```
+
+
+# Making Predictions
+
+Here, essentially the same analysis is performed, but models are fitted using only the first 28 days of data.
+
+
+```{r tidy=TRUE,message=FALSE,warning=FALSE, fig.height=10, fig.width=8.25}
+require(gridExtra)
+
+df_partial <- filter(df, t < 28)
+
+models = list()
+# Make DMD models and predictions
+for (r in c(5, 7, -1)){
+  tmp <- lm_with_dmd(df_partial, rank=r)
+  tmp$pred <- predict_with_dmd(df, tmp$model, tmp$dmd)
+  tmp$desc <- sprintf("DMD, rank=%i", tmp$dmd$rank)
+  models[[length(models)+1]] <- tmp
+}
+for (i in 1:3)
+{
+  desc <- "z ~ (t+lat+lon)"
+  if (i > 1){desc <- sprintf("z ~ (t+lat+lon)^%i",i)}
+  tmp  <- list(model=lm(formula(desc), data=df_partial))
+  tmp$pred <- predict(tmp$model, df, interval="prediction")
+  tmp$desc <- desc
+  models[[length(models)+1]] <- tmp
+}
+
+# Given data, the model, and the prediction, make a plot of the prediction,
+# make a plot of the prediction error, and compute a few key quantities.
+p = list()
+for (i in 1:length(models)){
+  m <- models[[i]]
+
+  heat <- expand.grid(time=1:num_time, location=1:num_locs)
+  heat$z <-m$pred[, 1]
+  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) +
+                        geom_tile() + theme_void() + labs(title=m$desc) +
+                        scale_fill_continuous(limits=c(65, 105), type = "viridis", option="inferno")
+  
+  aic <- AIC(m$model)
+  desc <- sprintf("AIC = %.2f", aic)
+  heat$error <- m$pred[, 1] - df$z
+  p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=error)) + 
+                        geom_tile() + scale_fill_distiller(palette = "Spectral", limits=c(-25, 25)) + theme_void() +
+                        labs(title=desc) 
+  print(sprintf("%.2f %.2f", max(heat$error), min(heat$error)))
+  p[[length(p) + 1]]  <- ggplot(filter(cbind(df, m$pred), id==14943), aes(t, z)) +
+       geom_point() +
+       geom_line(aes(y = fit), color="blue") +
+       geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+       geom_line(aes(y = lwr), color = "red", linetype = "dashed") 
+}
+
+q <- grid.arrange(grobs=p, ncol=3)#, theme(plot.margin=margin(250,10,10,10)))
+ggsave("prediction_comparison.png", q, dpi = 600, width = 12, height = 12, units = "in")
+ggsave("prediction_comparison.pdf", q, dpi = 600, width = 12, height = 12, units = "in")
+```

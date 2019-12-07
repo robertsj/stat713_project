@@ -129,9 +129,9 @@
 Dynamic Mode Decomposition (DMD) is a method for decoupling the spatio-temporal dynamics of an observed system.
 Here, DMD was used to produce spatio-temporal basis functions for the analysis of spatially-discrete but temporally
 continuous processes (measured at discrete time intervals).
-The basis use of DMD for producing basis vectors is prescribed, and a key features of the method are highlighted.
+The basic use of DMD for producing basis vectors is prescribed, and a key features of the method are highlighted.
 The method is used to form basis vectors for a standard, linear model of temperature measurements distributed across the United States.
-The model is compared to a polynomial method, and the results indicate the DMD basis vectors capture spatio-temporal variation more efficiently.
+Models with different numbers of DMD basis functions were compared to polynomial models with increasing numbers of predictors using maximum likelihood estimation, and Akaike information criterion (AIC) estimates indicate the DMD basis vectors may capture the spatio-temporal variation more efficiently.
 Though preliminary, the work suggests that DMD may find use in spatio-temporal, statistical modeling.
 \end{abstract}
 
@@ -201,7 +201,7 @@ Because only one set of data was explored, this study is naturally preliminary i
 
 Central to the analysis presented here is the DMD algorithm.
 Despite its connections to the more general Koopman theory, DMD can be motivated in somewhat simpler (albeit, heuristic) terms by adapting the presentation of Ref.~\cite{kutzbook}.
-Consider again a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where $\mathbf{z} \in \mathbb{R}^n$ is the $n$-dimensional state vector at time $t$.
+Consider again a dynamical system described by Eq.~(\ref{eq:dynamicalsystem}), where $\mathbf{z} \in \mathbb{R}^m$ is the $m$-dimensional state vector at time $t$.
 Suppose there exists some linear operator $\mathcal{A}$ such that
 \begin{equation}
  \frac{d \mathbf{z}}{dt} = \mathcal{A} \mathbf{z} \, .
@@ -209,7 +209,7 @@ Suppose there exists some linear operator $\mathcal{A}$ such that
 \end{equation}
 One might note that this $\mathcal{A}$ represents the Koopman operator for the measurement function $\mathbf{g}(\mathbf{z}) = \mathbf{z}$ and is likely not known explicitly.
 However, let the system be observed, leading to a sequence of observations of the state vector in time, i.e., $\mathbf{Z} = [\mathbf{z}_{1}, \mathbf{z}_{2}, \ldots \mathbf{z}_{n}$], where the $m$-vector $\mathbf{z}_{j}$ is the $j$th column of $\mathbf{Z}$. 
-For simplicity, assume these observations are taken at equally-spaced times $t_0, t_1, \ldots t_n$ with $t_{i+1} = t_i + \Delta t$.  
+For simplicity, assume these observations are taken at equally-spaced times $t_0, t_1, \ldots t_n$ with $t_{i+1} = t_i + \Delta$.  
 Now, let there be some, possibly approximate, linear mapping $\mathbf{z}_{j+1} \approx \mathbf{A}\mathbf{z}_{j}$, or \begin{equation}
    \mathbf{Z}_+ \approx \mathbf{A}\mathbf{Z}_- \, ,
    \label{eq:linearmapping}
@@ -274,7 +274,7 @@ One way to select $r$ is to use the optimal hard threshold for singular values \
 With each eigenvector $\boldsymbol{\phi}_k$ and eigenvalue $\lambda_k$ of $\mathbf{A}$, one can construct the spatio-temporal basis vector
 \begin{equation}
   \boldsymbol{\psi}_k = 
-    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots n \, \text{for} \, j = 1\ldots m]' \, ,
+    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots m \, \text{for} \, j = 1\ldots n]' \, ,
 \end{equation}
 which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined by Eq.~(\ref{eq:linmodel}).
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
@@ -285,7 +285,7 @@ In other words, the real part of the conjugate pair may be kept as one basis vec
 
 Given the basis $\boldsymbol{\Psi}$, the maximum-likelihood estimates of the parameters $\boldsymbol{\beta}$ and $\sigma^2_{\varepsilon}$ of Eq.~(\ref{eq:linmodel}) can be made.
 These estimates provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).  
-A separate issue is decide which columns of the basis $\boldsymbol{\Psi}$ to use in the regression analysis.
+A separate issue is to decide which columns of the basis $\boldsymbol{\Psi}$ to use in the regression analysis.
 Because these columns are not orthogonal (i.e., they are collinear), inclusion of one additional basis vector generally changes the impact of each other basis vector.
 Past work applied an approximate, sparsity-promoting technique equivalent to lasso-regression for selecting a subset of modes to include followed by a standard, least-squares fit of the data to those modes \cite{jovanovic}.
 For the present work, the number of modes computed (i.e., the rank $r$ in Eq.~\ref{eq:lowrank}) was fixed, and all modes computed were included in the basis.
@@ -296,62 +296,84 @@ For the present work, the number of modes computed (i.e., the rank $r$ in Eq.~\r
 \label{sec:results}
 % 500--1000 words
 
-To illustrate the use of DMD for constructing basis functions, a statistical model was constructed for the maximum temperature recorded at each of over 100 weather stations located in the midwestern and southeastern United Stated. 
+To illustrate the use of DMD for constructing basis functions, a statistical model was constructed for the maximum temperature recorded at each of over 100 weather stations located in the midwestern and southeastern United States. 
 The data used is distributed with the software developed in support of Ref.~\cite{wikle2019sts} but was originally extracted from the National Oceanic Atmospheric Administration (NOAA) IRI/LDEO Climate Data Library.
-The specific case studied is an adaptation of an exercise presented in Ref.~\cite{wikle2019sts} in which spatial, temporal, and spatio-temporal basis functions are explored for predicting the maximum temperature at arbitrary points in space and time.
+The problem explored  is an adaptation of an exercise presented in Ref.~\cite{wikle2019sts} in which spatial, temporal, and spatio-temporal basis functions are explored for predicting the maximum temperature at arbitrary points in space and time.
 However, because DMD produces spatially-discrete basis vectors, the exercise was modified to produce spatially-discrete models.
 
-Specifically, models were developed for the maximum temperature at each station during July of 1993.
-To simplify the application of DMD, data was included only from the 132 stations for which measurements were made on each of the 31 days.
-Two DMD-based models were constructed, each using three spatio-temporal basis functions; in all cases, the SVD rank $r$ was set to 5, but elimination of complex conjugate pairs resulted in just three vectors.
-In other words, each model had the form
+Specifically, models were developed for the maximum temperature at each station during July of 1993 having the form
 \begin{equation}
  \boldsymbol{\zeta} \sim \mathcal{N}(\boldsymbol{\Psi}\boldsymbol{\beta}, \sigma^2 \mathbf{I}) \, ,
 \end{equation}
 where, of note, $\beta_0$ does {\it not} correspond to an intercept.
-The first DMD model, referred to as {\tt dmd-full}, was constructed using all 31 days of measurements, both for the basis definition and the regression (using {\tt lm}).  
-The second DMD model, referred to as {\tt dmd-partial}, was constructed using the first 28 days of measurements, again for the basis and regression.
-For comparison (albeit, an uninspiring one), a polynomial model was used of the form
-\begin{equation}
-\begin{split}
- \zeta_k = \beta_0 &+ \beta_1 t_k + \beta_2 a_k + \beta_2 o_k + \beta_3 t_k a_k \\
-                   &+ \beta_4 t_k o_k + \beta_5 a_k o_k  + \varepsilon \, ,
-\end{split}
-\end{equation}
-where $t_k$, $a_k$, and $o_k$ represent time, latitude, and longitude of the $k$th measurement, and $\varepsilon \sim N(0, \sigma^2)$.
-This model was fitted using the same partial or full set of data ({\tt poly-partial} and {\tt poly-full}).
-
-Shown in Figs.~\ref{fig:dmd_full}--\ref{fig:poly_part} are the predicted, maximum temperatures at station 14943.
-Additionally, the 95\% prediction intervals are shown.
-
-
+To simplify the application of DMD, data was included only from the 132 stations for which measurements were made on each of the 31 days.
+Several DMD-based models were constructed using different numbers of spatio-temporal basis functions.  
+The maximum number of basis vectors used was 16 after reduction of complex-conjugate pairs to single vectors (from a total of 31 possible).  
+Shown in Figure~\ref{fig:snapshots} are the temperature measurements at each station and time in the form of a 2-D image.
 \begin{figure}[h]
  \centering
- \includegraphics[width=0.5\textwidth]{../code/plot_dmd_full.pdf}\\
-   \caption{Prediction and prediction intervals for {\tt dmd-full}.}
-  \label{fig:dmd_full}
+ \includegraphics[width=0.5\textwidth]{../code/snapshots.pdf}\\
+   \caption{Maximum temperatures ($^\text{o}$F) measured at each station (arbitrary index) and day of July, 1993.}
+  \label{fig:snapshots}
 \end{figure}
+The singular values corresponding to these measurements are shown in Figure~\ref{fig:snapshots}.
 \begin{figure}[h]
  \centering
- \includegraphics[width=0.5\textwidth]{../code/plot_dmd_part.pdf}\\
-   \caption{Prediction and prediction intervals for {\tt dmd-part}.}
-  \label{fig:dmd_part}
-\end{figure}
-\begin{figure}[h]
- \centering
- \includegraphics[width=0.5\textwidth]{../code/plot_poly_full.pdf}\\
-   \caption{Prediction and prediction intervals for {\tt poly-part}.}
-  \label{fig:poly_full}
-\end{figure}
-\begin{figure}[h]
- \centering
- \includegraphics[width=0.5\textwidth]{../code/plot_poly_part.pdf}\\
-   \caption{Prediction and prediction intervals for {\tt poly-part}.}
-  \label{fig:poly_part}
+ \includegraphics[width=0.5\textwidth]{../code/singular_values.pdf}\\
+   \caption{Singular values for measurements shown in Figure ~\ref{fig:snapshots}.}
+  \label{fig:singular_values}
 \end{figure}
 
-All four models appear to capture the observations reasonably well.
-Of some interest is that each of the DMD covariates (the basis vectors) had corresponding $p$ values below $10^{-5}$, indicates their apparent importance.
+
+As shown in Figure~\ref{fig:snapshots}, the optimal truncation of the SVD yields a rank of 7.  Because the corresponding DMD modes include complex-conjugate pairs, only 4 modes in total are kept; these are shown in Figure~\ref{fig:dmd_modes} as a function of station latitude.
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=0.5\textwidth]{../code/dmd_modes.pdf}\\
+   \caption{DMD modes formed from optimally-truncated SVD.}
+  \label{fig:dmd_modes}
+\end{figure}
+Clearly, the first mode captures a strong dependence on latitude as might be expected from the geography: northern states have lower temperatures, and the trend is quite gradual.  The higher-order modes are far harder to interpret.
+
+For comparison to DMD models, the following three polynomial models were used:
+\begin{enumerate}
+ \item $\mathbf{z} = [\mathbf{1}, \mathbf{t}, \mathbf{a}, \mathbf{o}]\boldsymbol{\beta} + \boldsymbol{\epsilon}$
+  \item $\mathbf{z} = [\mathbf{1}, \mathbf{t}, \mathbf{a}, \mathbf{o}, \mathbf{ta}, \mathbf{to}, \mathbf{ao}]\boldsymbol{\beta} + \boldsymbol{\epsilon}$
+  \item $\mathbf{z} = [\mathbf{1}, \mathbf{t}, \mathbf{a}, \mathbf{o}, \mathbf{ta}, \mathbf{to}, \mathbf{ao}, \mathbf{tao}]\boldsymbol{\beta} + \boldsymbol{\epsilon}$
+\end{enumerate}
+where $\boldsymbol{\epsilon}\sim \mathcal{N}(\mathbf{0},\sigma^2 \mathbf{I})$ and $\mathbf{t}$, $\mathbf{a}$, and $\mathbf{o}$ represent time, latitude, and longitude values for the measured temperatures $\mathbf{z}$.
+Figure~\ref{fig:model_comparison} shows the temperatures predicted by three DMD models (ranks of 3, 4, and 16) and the three polynomial model at each time and location, the errors, and the values measured at and predicted for station 14943 with 95\% prediction intervals.
+
+For the data analyzed and the models shown, the DMD bases lead to slightly lower AIC values than the polynomial models.  The rank-16 DMD model yields the most extreme oscillation in the predicted values at station 14943, though the oscillation do appear to follow the measured trends reasonably well (though, perhaps, ``too'' well).
+
+Because the rank-4 DMD model might have been expected to yield the best AIC (due to the use of the optimally-truncated SVD), it was surprising to find the maximum-rank DMD model yielding the lowest AIC value.  Shown in Figure~\ref{fig:dmd_aic} are the AIC values for all 31 possible DMD models based on the entire set of July 1993 data as a function of DMD rank.  Here, complex-conjugate pairs were not reduced, but the underlying {\tt lm} fits automatically deleted predictors due to the resulting singularities.
+\begin{figure}[ht]
+ \centering
+ \includegraphics[width=0.45\textwidth]{../code/dmd_aic.pdf}\\
+   \caption{AIC values for DMD models as a function of selected rank.}
+  \label{fig:dmd_aic}
+\end{figure}
+With the exception of large values between ranks of 20 and 26, the AIC values decrease slightly with increased DMD rank. 
+
+
+To test how well each model can forecast temperatures, the models described above were reconstructed using the first 28 days of measurements with all parameters remaining the same.  
+The predictions and errors are shown in Figure~\ref{fig:prediction_comparison}.
+The errors overall are a bit larger, and the predictions for station 14943 are less accurate.
+In particular, the DMD predictions exhibit visually meaningful shifts in the prediction from the apparent averages.
+In other words, the DMD models appear sensitive to (1) use of truncated data for generating the basis vectors, (2) use of truncated data for fitting the model, or (3) both.
+
+\begin{figure*}[h]
+ \centering
+ \includegraphics[width=1\textwidth]{../code/model_comparison.pdf}\\
+   \caption{Predicted temperatures at all space-time points (left) with corresponding errors (center). Also shown are measured values with predictions and 95\% prediction intervals at station 14943.}
+  \label{fig:model_comparison}
+\end{figure*}
+
+\begin{figure*}[h]
+ \centering
+ \includegraphics[width=1\textwidth]{../code/prediction_comparison.pdf}\\
+   \caption{Same as Figure~\ref{fig:model_comparison} but each model was constructed using only the first 28 days of measurements.}
+  \label{fig:prediction_comparison}
+\end{figure*}
 
 
 
@@ -365,7 +387,7 @@ The analysis described is very preliminary, but the results demonstrate that the
 The mechanics of the process (evaluation of the vectors for different times, etc.) requires further development to facilitate continued study.
 However, the process has been implemented entirely in R, and so continued work should be reasonably straightforward.
 
-Further work should pursue the use of the DMD basis in conjunction with continuous treatments of space. 
+Further work should explore DMD with continuous treatments of space. 
 In particular, it seems plausible the DMD modes could be used directly to inform spatio-temporal correlation functions for Gaussian-process models.
 Finally, based on the literature surveyed so far, it does not seem DMD has been applied {\it by name} in the statistics community, but the similarity between it and more advanced spatio-temporal models suggests that there may be significant overlap between DMD and other methods (but this has not yet been identified).
 

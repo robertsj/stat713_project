@@ -36,7 +36,7 @@ compute_svd <- function(Z, rank){
 
 # Compute the dynamic mode decomposition (DMD) of a snapshot matrix Z and
 # return the DMD modes Phi and frequencies omega.
-compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, discard_pairs=TRUE){
+compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, keep_pairs=0){
   
   # Simplify things by separating snapshots into + and -
   num_time <- dim(Z)[2]
@@ -60,17 +60,16 @@ compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, discard_pairs=TRUE){
   Phi <- Z.plus %*% V.r %*% diag(1.0/S.r) %*% W
   omega <- log(Lambda)/delta.t
   
-  # By default, keep only one of a conjugate pairs by looking for nonnegative
+  # By default, keep only one of a conjugate pair by looking for nonnegative
   # imaginary components of eigenvalues.
-  if (discard_pairs){
+  if (keep_pairs==0){
     keep <- which(Im(omega)>=0)
     omega <- omega[keep]
     Phi <- Phi[,keep]
   }
-  
   Phi <- as.matrix(Phi)
   
-  dmd <- list(Phi=Phi, omega=omega, rank=length(omega), t.0=t.0, delta.t=delta.t)
+  dmd <- list(Phi=Phi, omega=omega, rank=length(omega), t.0=t.0, delta.t=delta.t, keep_pairs=keep_pairs)
   return(dmd)
 }
 
@@ -78,13 +77,27 @@ compute_dmd <- function(Z, rank=0, t.0=0.0, delta.t=1.0, discard_pairs=TRUE){
 compute_dmd_basis <- function(dmd, times){
   Phi <- dmd$Phi
   omega <- dmd$omega
+  # Construct the basis but separate the real and imaginary components.  Here,
+  # create a list of 1's and 0's to indicate which should be real and which
+  # should be imaginary.  The reals will be any mode for which Im(omega)>=0
+  if (dmd$keep_pairs==2) {
+    real <- Im(omega) >= 0.0
+  }
+  else {
+    real <- rep(TRUE, length(omega))
+  }
   times <- times - dmd$t.0
   Psi <- matrix(0.0,  dim(Phi)[1]*length(times), dim(Phi)[2])
   for (r in 1:dim(Phi)[2]){
     temporal <- exp(omega[r]*times)
     spatial <- Phi[,r]
-    Psi[, r] <- Re(kronecker(spatial, temporal))
-    Psi[, r] <- Psi[, r] / sqrt(sum(Psi[, r]^2)) # normalize for good measure
+    if (real[r]){
+      Psi[, r] <- Re(kronecker(spatial, temporal))
+    }
+    else {
+      Psi[, r] <- Im(kronecker(spatial, temporal))
+    }
+    Psi[, r] <- Psi[, r] / sqrt(sum(Psi[, r])^2) # normalize for good measure
   }
   return(Psi)
 }
@@ -109,7 +122,7 @@ df_add_dmd <- function(df, dmd){
 }
 
 # Create linear model based on DMD of rank r
-lm_with_dmd <- function(df, rank=0, discard_pairs=TRUE){
+lm_with_dmd <- function(df, rank=0, keep_pairs=0){
   num_locs <- length(unique(df$id))
   num_time <- length(df$id)/num_locs
   times <- sort(unique(df$t))
@@ -117,7 +130,7 @@ lm_with_dmd <- function(df, rank=0, discard_pairs=TRUE){
   delta.t <- times[2]-times[1]
   t.0 <- times[1]
   Z <- t(matrix(as.numeric(df$z), num_time, num_locs, byrow = FALSE))
-  dmd <- compute_dmd(Z, rank, t.0, delta.t, discard_pairs)
+  dmd <- compute_dmd(Z, rank, t.0, delta.t, keep_pairs)
   df <- df_add_dmd(subset(df, select=c(z, t)), dmd)
   return(list(model=lm(z~.-t-1, data=df), dmd=dmd)) # remove t and intercept
 }

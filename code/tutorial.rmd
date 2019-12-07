@@ -89,7 +89,7 @@ To support these steps, several functions are implemented in `dmd.R`:
   - `df_add_dmd(df, dmd)` inserts a DMD basis computed using `dmd` into a dataframe `df`.  The dataframe must have observations organized in a regular space-time grid (with time as the inner variable).  Times may be arbitrary (relative to a starting point of 0), but spatial points must be consistent with those of the DMD modes.  Columns added are `Psi.1`, `Psi.2`, ..., `Psi.R`.
   - `lm_with_dmd(df, rank)` produces a linear model using the equivalent of `z ~ Psi.1 + Psi.2 + ... + Psi.R - 1`, i.e., the intercept is removed because `Psi.1` captures the "average" dynamics.  Returns a list with `model` and `dmd` attributes.
   - `predict_with_dmd(df, dmdmodel)` is given (a possibly new) dataframe and list `dmdmodel` from `lm_with_dmd`.  Returns the result of `predict` with 95% prediction intervals.
-  
+  ###
   
 # Inspecting DMD Modes
 
@@ -140,7 +140,7 @@ require(gridExtra)
 models = list()
 # Make DMD models and predictions
 for (r in c(5, 7, -1)){
-  tmp <- lm_with_dmd(df, rank=r)
+  tmp <- lm_with_dmd(df, rank=r, keep_pairs = 2)
   tmp$pred <- predict_with_dmd(df, tmp$model, tmp$dmd)
   tmp$desc <- sprintf("DMD, rank=%i", tmp$dmd$rank)
   models[[length(models)+1]] <- tmp
@@ -194,17 +194,21 @@ Moreover, the DMD model based on the full SVD yields the lowest AIC value despit
 Hence, let's investigate the impact of DMD rank on AIC.  As noted, the "optimal" rank is based on an optimally truncated SVD that is itself based on statistical considerations.  Here, AIC is computed for DMD as a function of rank.  Note, complex-conjugate pairs are not reduced to one basis vector this time, though `lm` does in all cases eliminate the singularities.
 
 ```{r}
-aic <- list()
-ranks <- list()
-pdf("dmd_aic.pdf",width=5,height=3.5)
+aic <- rep(0, 31)
+aic2 <- rep(0, 31)
+ranks <- rep(0, 31)
+#pdf("dmd_aic.pdf",width=5,height=3.5)
 for (r in 1:31){
-  m <- lm_with_dmd(df, rank=r, discard_pairs=FALSE)
-  aic[[r]] <- AIC(m$model)
-  #s <- sprintf("selected rank=%i  num pred=%i  aic=%.2f", m$dmd$rank, , aic[[r]])
-  ranks[[r]] <- r-sum(is.na(m$model$coefficients))
+  m <- lm_with_dmd(df, rank=r, keep_pairs=0)
+  aic[r] <- AIC(m$model)
+  ranks[r] <- r-sum(is.na(m$model$coefficients))
+  m <- lm_with_dmd(df, rank=r, keep_pairs=2)
+  aic2[r] <- AIC(m$model)
 }
-plot(1:31, aic,xlab="DMD rank", ylab="AIC")
-dev.off()
+plot(1:31, aic, type="b", pch=19, col="black", xlab="DMD rank", ylab="AIC", ylim=c(min(aic,aic2), max(aic, aic2)))
+lines(1:31, aic2, pch=18, col="red", type="b", lty=2)
+legend(1, 30000, legend=c("eliminate", "keep"),  col=c("black", "red"), lty=1:2, cex=0.8, pch=c(19,18))
+#dev.off()
 ```
 
 The results indicate that the AIC generally decreases by a small amount as the number of modes include increases, with notable deviations between 20 and 26.  Recall that the optimal SVD was 7, for which 4 DMD modes are retained (3 complex pairs reduced to 3 modes).
@@ -229,13 +233,13 @@ require(gridExtra)
 
 df_partial <- filter(df, t < 28)
 
-models = list()
+models2 = list()
 # Make DMD models and predictions
 for (r in c(5, 7, -1)){
-  tmp <- lm_with_dmd(df_partial, rank=r)
+  tmp <- lm_with_dmd(df_partial, rank=r,keep_pairs = 2)
   tmp$pred <- predict_with_dmd(df, tmp$model, tmp$dmd)
   tmp$desc <- sprintf("DMD, rank=%i", tmp$dmd$rank)
-  models[[length(models)+1]] <- tmp
+  models2[[length(models2)+1]] <- tmp
 }
 for (i in 1:3)
 {
@@ -244,14 +248,14 @@ for (i in 1:3)
   tmp  <- list(model=lm(formula(desc), data=df_partial))
   tmp$pred <- predict(tmp$model, df, interval="prediction")
   tmp$desc <- desc
-  models[[length(models)+1]] <- tmp
+  models2[[length(models2)+1]] <- tmp
 }
 
 # Given data, the model, and the prediction, make a plot of the prediction,
 # make a plot of the prediction error, and compute a few key quantities.
 p = list()
-for (i in 1:length(models)){
-  m <- models[[i]]
+for (i in 1:length(models2)){
+  m <- models2[[i]]
 
   heat <- expand.grid(time=1:num_time, location=1:num_locs)
   heat$z <-m$pred[, 1]
@@ -277,3 +281,8 @@ q <- grid.arrange(grobs=p, ncol=3)#, theme(plot.margin=margin(250,10,10,10)))
 ggsave("prediction_comparison.png", q, dpi = 600, width = 12, height = 12, units = "in")
 ggsave("prediction_comparison.pdf", q, dpi = 600, width = 12, height = 12, units = "in")
 ```
+
+# More on Model Selection
+
+
+

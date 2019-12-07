@@ -280,8 +280,14 @@ which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
 Moreover, the basis vectors can be complex valued, which indicates oscillatory dynamics in the system and, in principle, may lead to  numerical challenges if the observable state is a physical (i.e., real-valued) quantity.
 However, complex modes always appear in conjugate pairs. 
-Hence, if both modes are included in the basis, the opposing, imaginary components will cancel upon projection of a real-valued quantity onto the basis in the absence of roundoff errors.
-In other words, the real part of the conjugate pair may be kept as one basis vector, and complex values can be eliminated altogether from the final, linear model\footnote{In practice, 128-bit, complex arithmetic with the additional degrees of freedom offered by the conjugate modes may actually improve accuracy a bit.}.
+In principle, if both modes are included in the basis, the opposing, imaginary components will cancel upon projection of a real-valued quantity onto the basis in the absence of roundoff errors.
+The complex components do, though, provide additional degrees of freedom.
+Because {\tt lm} does not support complex design matrices, there are two possible ways to contstruct a real-valued $\boldsymbol{\Psi}$.
+First, a conjugate pair $\boldsymbol{\psi}_i = \boldsymbol{\psi}^*_j$ can be stored instead as $\boldsymbol{\psi}_i = \text{Re}(\boldsymbol{\psi}_i)$ and $\boldsymbol{\psi}_j = \text{Im}(\boldsymbol{\psi}_i)$.
+For modeling of real-valued quantities, this representation leads to equivalent models in infinite precision.
+Alternatively, the real part of the conjugate pair may be kept, thereby reducing the number of basis vectors retained.  
+With either approach, complex values are eliminated altogether from the final, linear model.
+
 
 Given the basis $\boldsymbol{\Psi}$, the maximum-likelihood estimates of the parameters $\boldsymbol{\beta}$ and $\sigma^2_{\varepsilon}$ of Eq.~(\ref{eq:linmodel}) can be made.
 These estimates provide a more rigorous alternative to the coefficient values implied by Eq.~(\ref{eq:amplitudes}).  
@@ -348,7 +354,7 @@ For the data analyzed and the models shown, the DMD bases lead to slightly lower
 Because the rank-4 DMD model might have been expected to yield the best AIC (due to the use of the optimally-truncated SVD), it was surprising to find the maximum-rank DMD model yielding the lowest AIC value.  Shown in Figure~\ref{fig:dmd_aic} are the AIC values for all 31 possible DMD models based on the entire set of July 1993 data as a function of DMD rank.  Here, complex-conjugate pairs were not reduced, but the underlying {\tt lm} fits automatically deleted predictors due to the resulting singularities.
 \begin{figure}[ht]
  \centering
- \includegraphics[width=0.45\textwidth]{../code/dmd_aic.pdf}\\
+ \includegraphics[width=0.5\textwidth]{../code/dmd_aic.pdf}\\
    \caption{AIC values for DMD models as a function of selected rank.}
   \label{fig:dmd_aic}
 \end{figure}

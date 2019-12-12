@@ -33,11 +33,12 @@ We're practical and seek the finite-dimensional operator (matrix) $\mathbf{A}$ s
 $$
   \mathbf{Z}_+ \approx \mathbf{A}\mathbf{Z}_- \, .
 $$
-With eigenpairs $\boldsymbol{\phi}_i$ and $\lambda_i$ of $\mathbf{A}$, 
+With eigenpairs $\boldsymbol{\phi}_k$ and $\lambda_k$ of $\mathbf{A}$, 
 
 $$
-\boxed{\mathbf{z}(t) \approx \sum^{}_{i} b_i \boldsymbol{\phi}_i e^{\frac{\log(\lambda_i) t}{\Delta}} } \, .
+\boxed{\mathbf{z}(t) \approx \sum^{}_{k} \beta_k \boldsymbol{\phi}_k e^{\omega_k t}} \, .
 $$
+where $\omega_k = \log (\lambda_k) / \Delta$.
 
 ## Low-Rank Approximation
 
@@ -120,8 +121,30 @@ q <- grid.arrange(grobs=plots, ncol=2)
 
 Note the near-zero frequency of mode 1, which indicates a nearly time-invariant contribution.
 
+## Linear Model
+
+Reorganize the observations $\mathbf{Z}$ as 
+
+$$
+\boldsymbol{\zeta} = [z_{11}, z_{21}, \ldots z_{m1}, z_{12}, \ldots, z_{mn}] \, .
+$$
+
+Then let
+
+$$
+ \boldsymbol{\zeta} = \boldsymbol{\Psi}\boldsymbol{\beta} + \boldsymbol{\varepsilon} \, ,
+$$
+where  $\boldsymbol{\varepsilon} \sim N(0, \mathbf{I}\sigma^2_{\varepsilon})$ and the columns of $\boldsymbol{\Psi}$ are defined as
+
+$$
+  \boldsymbol{\psi}_k = 
+    [\phi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots m \, \text{for} \, j = 1\ldots n]' \, .
+$$
+
+
 ## Reconstructing $\mathbf{Z}$ with DMD Basis
 
+Using all data, approximate $\mathbf{Z}$; shown at right is temperature at station 14943.
 
 ```{r tidy=TRUE,message=FALSE,warning=FALSE}
 require(gridExtra)
@@ -176,6 +199,8 @@ q <- grid.arrange(grobs=p[1:9], ncol=3)
 
 ## Reconstructing $\mathbf{Z}$ with Poly. Basis
 
+Using all data, approximate $\mathbf{Z}$; shown at right is temperature at station 14943.
+
 ```{r}
 q <- grid.arrange(grobs=p[10:18], ncol=3)
 ```
@@ -183,7 +208,8 @@ q <- grid.arrange(grobs=p[10:18], ncol=3)
 
 ## Predicting $\mathbf{Z}$ with DMD Basis
 
-Now, use only first 28 observations.
+Now, use only first 28 observations. Shown at right is temperature at station 14943.
+
 
 ```{r tidy=TRUE,message=FALSE,warning=FALSE}
 require(gridExtra)
@@ -239,26 +265,36 @@ q <- grid.arrange(grobs=p[1:9], ncol=3)#, theme(plot.margin=margin(250,10,10,10)
 
 ## Predicting $\mathbf{Z}$ with Poly. Basis
 
+Now, use only first 28 observations. Shown at right is temperature at station 14943.
+
 ```{r}
 q <- grid.arrange(grobs=p[10:18], ncol=3)
 ```
 
 ## A Bit on Model Selection
 
-```{r}
+Compare models with (A) rank-$r$ SVD and basis, elimating pairs, (B) rank-$r$ SVD and basis, keeping pairs, and (C) rank-30 SVD, "optimal" rank-$r$ basis:
+
+```{r, fig.width=6,fig.height=3.5}
 library(leaps)
 
-aic <- rep(0, 30)
+aic1 <- rep(0, 30)
 aic2 <- rep(0, 30)
-ranks <- rep(0, 31)
+aic3 <- rep(0, 30)
+ranks <- rep(0, 30)
+
+# Compute the AIC values for models built using 1..30 modes
+# such that the modes are compute using an SVD rank of 1..30.
 for (r in 1:30){
   m <- lm_with_dmd(df, rank=r, keep_pairs=0)
-  aic[r] <- AIC(m$model)
+  aic1[r] <- AIC(m$model)
   ranks[r] <- r-sum(is.na(m$model$coefficients))
   m <- lm_with_dmd(df, rank=r, keep_pairs=2)
   aic2[r] <- AIC(m$model)
 }
 
+# Compute AIC values for best models built using 1..30 modes, but
+# the modes are always from the rank-30 SVD.
 m <- lm_with_dmd(df, rank=-1, keep_pairs=2)
 tmp_df <- df_add_dmd(subset(df, select=c(z, t)), m$dmd) 
 b <- regsubsets(z ~. - t, intercept=FALSE, data=tmp_df, nvmax=30)
@@ -269,10 +305,21 @@ for (i in 1:num_models){
   aic3[i] <- AIC(lm(z~.-1, data=subset(tmp_df, select=c(z=TRUE, t=FALSE, rs$which[i,]))))
 }
 
-plot(1:30, aic, type="b", pch=19, col="black", xlab="DMD rank", ylab="AIC", ylim=c(min(aic,aic2), max(aic, aic2)))
-lines(1:30, aic2, pch=18, col="red", type="b", lty=2)
-lines(1:30, aic3, pch=17, col="blue", type="b", lty=2)
-legend(1, 30000, legend=c("eliminate", "keep", "30"),  col=c("black", "red", "blue"), lty=1:2, cex=0.8, pch=c(19,18,17))
-
+library(ggthemes)
+library(tidyr)
+tmp_df <- data.frame(ranks, A=aic1, B=aic2, C=aic3)
+tmp_df <- gather(tmp_df, key="key", value="value", A:C)
+p <- ggplot(tmp_df, aes(x=ranks, y=value, color=key)) +
+     geom_line() + theme(legend.title = element_blank()) +
+     geom_point(aes(shape=key, color=key), size=4) +
+     xlab("r") + ylab("AIC")
+print(p)
 
 ```
+
+## Conclusions, etc.
+
+ - Mechanics of DMD for discrete-in-space, continuous-in-time modeling demonstrated.
+ - DMD modes can capture a lot of information but may lead to overfitting (as suggested by predictions)
+ - DMD modes coupled with spatial coordinates may yield low-rank, spatial GPs
+ - The whole process looks pretty similar to principal oscillation patterns (POPs)...

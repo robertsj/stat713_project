@@ -165,7 +165,7 @@ for (i in 1:length(models)){
   heat$z <-m$pred[, 1]
   p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) +
                         geom_tile() + theme_void() + labs(title=m$desc) +
-                        scale_fill_continuous(limits=c(65, 105), type = "viridis", option="inferno")
+                        scale_fill_continuous(limits=c(60, 110), type = "viridis", option="inferno")
   
   aic <- AIC(m$model)
   desc <- sprintf("AIC = %.2f", aic)
@@ -197,7 +197,7 @@ Hence, let's investigate the impact of DMD rank on AIC.  As noted, the "optimal"
 aic <- rep(0, 31)
 aic2 <- rep(0, 31)
 ranks <- rep(0, 31)
-#pdf("dmd_aic.pdf",width=5,height=3.5)
+pdf("dmd_aic.pdf",width=5,height=3.5)
 for (r in 1:31){
   m <- lm_with_dmd(df, rank=r, keep_pairs=0)
   aic[r] <- AIC(m$model)
@@ -208,7 +208,7 @@ for (r in 1:31){
 plot(1:31, aic, type="b", pch=19, col="black", xlab="DMD rank", ylab="AIC", ylim=c(min(aic,aic2), max(aic, aic2)))
 lines(1:31, aic2, pch=18, col="red", type="b", lty=2)
 legend(1, 30000, legend=c("eliminate", "keep"),  col=c("black", "red"), lty=1:2, cex=0.8, pch=c(19,18))
-#dev.off()
+dev.off()
 ```
 
 The results indicate that the AIC generally decreases by a small amount as the number of modes include increases, with notable deviations between 20 and 26.  Recall that the optimal SVD was 7, for which 4 DMD modes are retained (3 complex pairs reduced to 3 modes).
@@ -261,7 +261,7 @@ for (i in 1:length(models2)){
   heat$z <-m$pred[, 1]
   p[[length(p) + 1]] <- ggplot(heat, aes(location, time, fill=z)) +
                         geom_tile() + theme_void() + labs(title=m$desc) +
-                        scale_fill_continuous(limits=c(65, 105), type = "viridis", option="inferno")
+                        scale_fill_continuous(limits=c(60, 110), type = "viridis", option="inferno")
   
   aic <- AIC(m$model)
   desc <- sprintf("AIC = %.2f", aic)
@@ -284,5 +284,26 @@ ggsave("prediction_comparison.pdf", q, dpi = 600, width = 12, height = 12, units
 
 # More on Model Selection
 
+Given the full DMD basis (i.e., rank 30), one can select the optimal combination of modes by an exhaustive search using AIC as the selection criterion.  Here, the `leaps` package is applied following the example on Page 154 of Faraway.  However, in that example AIC is not actually computed completely, so the model is reconstructed and AIC is computed using the built-in function.
+
+```{r}
+library(leaps)
+m <- lm_with_dmd(df, rank=-1, keep_pairs=2)
+tmp_df <- df_add_dmd(subset(df, select=c(z, t)), m$dmd) 
+b <- regsubsets(z ~. - t, intercept=FALSE, data=tmp_df, nvmax=30)
+rs <- summary(b)
+num_models <- dim(rs$which)[1]
+aic3 <- rep(0.0, num_models)
+for (i in 1:num_models){
+  aic3[i] <- AIC(lm(z~.-1, data=subset(tmp_df, select=c(z=TRUE, t=FALSE, rs$which[i,]))))
+}
+plot(aic3 ~ I(1:num_models), xlab="number terms", ylab="AIC")
+```
+
+For this particular set of basis functions, the model is improved with increasing numbers of terms.  The overall trend follows that of the singular values computed previously for the snapshot matrix $\mathbf{Z}$.  However, the basis functions kept for any number of terms was not in the order in which they appear in the DMD basis:
+
+```{r}
+image(1:30, 1:30, t(as.matrix(rs$which*1)), col=gray.colors(2), xlab="vector index", ylab="included?"); legend(x=27, y=7, legend = c("no", "yes"), pch=15, col=gray.colors(2))
+```
 
 

@@ -227,9 +227,9 @@ In addition, the  eigenvalues of $\mathbf{A}$ are related to the continuous-time
 \begin{equation}
  \omega_i = \frac{\ln{(\lambda_i)}}{\Delta} \, .
 \end{equation}
-Corresponding to $\lambda_i$ is the eigenvector $\boldsymbol{\varphi}_i$ of $\mathbf{A}$, and, hence,
+Corresponding to $\lambda_i$ is the eigenvector $\boldsymbol{\phi}_i$ of $\mathbf{A}$, and, hence,
 \begin{equation}
- \mathbf{z}(t) \approx \sum^{n-1}_{i=1} \boldsymbol{\varphi}_i e^{\omega_i t} b_i = \boldsymbol{\Phi}e^{\boldsymbol{\Omega}t}\mathbf{b} \, . 
+ \mathbf{z}(t) \approx \sum^{n-1}_{i=1} \boldsymbol{\phi}_i e^{\omega_i t} b_i = \boldsymbol{\Phi}e^{\boldsymbol{\Omega}t}\mathbf{b} \, . 
  \label{eq:dmdreconstruction}
 \end{equation}
 Although there is no unique way to define the weights $\mathbf{b}$, one can satisfy $\mathbf{z}_1 = \boldsymbol{\Phi}\mathbf{b}$  in a least-squares sense by defining
@@ -274,7 +274,7 @@ One way to select $r$ is to use the optimal hard threshold for singular values \
 With each eigenvector $\boldsymbol{\phi}_k$ and eigenvalue $\lambda_k$ of $\mathbf{A}$, one can construct the spatio-temporal basis vector
 \begin{equation}
   \boldsymbol{\psi}_k = 
-    [\varphi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots m \, \text{for} \, j = 1\ldots n]' \, ,
+    [\phi_{ki} e^{\omega_k t_j} \, \text{for} \, i =1\ldots m \, \text{for} \, j = 1\ldots n]' \, ,
 \end{equation}
 which are the columns of $\boldsymbol{\Psi}$ as used in the linear model defined by Eq.~(\ref{eq:linmodel}).
 In general, the columns of $\boldsymbol{\Psi}$ are not orthogonal, which leads to collinearity and, possibly, lower predictive accuracy with increased rank.  
@@ -355,7 +355,7 @@ Because the rank-4 DMD model might have been expected to yield the best AIC (due
 \begin{figure}[ht]
  \centering
  \includegraphics[width=0.5\textwidth]{../code/dmd_aic.pdf}\\
-   \caption{AIC values for DMD models as a function of selected rank.}
+   \caption{AIC values for DMD models as a function of selected rank.  Complex-conjugate pairs were eliminated from the models represented by black circles, while the real and imaginary components were kept separately in the models represented by red diamonds.}
   \label{fig:dmd_aic}
 \end{figure}
 With the exception of large values between ranks of 20 and 26, the AIC values decrease slightly with increased DMD rank. 
